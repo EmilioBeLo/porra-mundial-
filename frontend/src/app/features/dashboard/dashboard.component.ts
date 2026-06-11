@@ -33,6 +33,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly loading = signal(true);
   readonly matchesWithPredictions = signal<MatchWithPrediction[]>([]);
 
+  readonly sortBy = signal<'date' | 'group'>('date');
+  readonly selectedGroup = signal<string>('all');
+  readonly teamQuery = signal<string>('');
+
   private countdownInterval: ReturnType<typeof setInterval> | null = null;
   readonly now = signal(Date.now());
 
@@ -44,19 +48,46 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return upcoming.length > 0 ? upcoming[0].match : null;
   });
 
+  readonly uniqueGroups = computed(() => {
+    const phases = this.matchesWithPredictions().map(m => m.match.grupo_o_fase);
+    return Array.from(new Set(phases)).sort();
+  });
+
+  readonly filteredMatches = computed(() => {
+    let list = this.matchesWithPredictions();
+    
+    // Group filter
+    const g = this.selectedGroup();
+    if (g && g !== 'all') {
+      list = list.filter(m => m.match.grupo_o_fase === g);
+    }
+    
+    // Team query filter
+    const query = this.teamQuery().toLowerCase().trim();
+    if (query) {
+      list = list.filter(m => 
+        m.match.equipo_local.toLowerCase().includes(query) || 
+        m.match.equipo_visitante.toLowerCase().includes(query)
+      );
+    }
+    
+    // Default sorting by date ascending
+    return [...list].sort((a, b) => new Date(a.match.fecha_hora).getTime() - new Date(b.match.fecha_hora).getTime());
+  });
+
   readonly groupedMatches = computed(() => {
-    const items = this.matchesWithPredictions();
+    const list = this.filteredMatches();
     const groups: Record<string, MatchWithPrediction[]> = {};
-    for (const item of items) {
+    for (const item of list) {
       const phase = item.match.grupo_o_fase || 'Sin fase';
-      if (!groups[phase]) groups[phase] = [];
+      if (!groups[phase]) {
+        groups[phase] = [];
+      }
       groups[phase].push(item);
     }
-    return Object.entries(groups).map(([phase, matches]) => ({
-      phase,
-      matches: matches.sort(
-        (a, b) => new Date(a.match.fecha_hora).getTime() - new Date(b.match.fecha_hora).getTime()
-      ),
+    return Object.keys(groups).map(key => ({
+      groupName: key,
+      matches: groups[key]
     }));
   });
 
