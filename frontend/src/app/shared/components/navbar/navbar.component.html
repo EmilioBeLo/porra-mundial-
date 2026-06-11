@@ -52,11 +52,8 @@
             </button>
           </div>
         } @else {
-          <a routerLink="/login" class="btn-secondary !py-1.5 !px-3 !text-xs no-underline" id="nav-login-btn">
+          <a routerLink="/login" class="btn-primary !py-1.5 !px-4 !text-xs no-underline" id="nav-login-btn">
             Entrar
-          </a>
-          <a routerLink="/register" class="btn-primary !py-1.5 !px-3 !text-xs no-underline" id="nav-register-btn">
-            Registrarse
           </a>
         }
       </div>
@@ -122,11 +119,8 @@
             </div>
           } @else {
             <div class="flex gap-2 px-4 py-2">
-              <a routerLink="/login" (click)="closeMenu()" class="btn-secondary !py-1.5 !px-3 !text-xs no-underline flex-1 text-center" id="nav-mobile-login-btn">
+              <a routerLink="/login" (click)="closeMenu()" class="btn-primary !py-1.5 !px-3 !text-xs no-underline flex-1 text-center" id="nav-mobile-login-btn">
                 Entrar
-              </a>
-              <a routerLink="/register" (click)="closeMenu()" class="btn-primary !py-1.5 !px-3 !text-xs no-underline flex-1 text-center" id="nav-mobile-register-btn">
-                Registrarse
               </a>
             </div>
           }

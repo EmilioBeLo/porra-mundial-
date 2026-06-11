@@ -43,27 +43,9 @@ def _create_token(user: User) -> str:
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def register(body: AuthRequest, db: Session = Depends(get_db)) -> TokenResponse:
     """Register a new user and return a JWT token."""
-    existing = db.query(User).filter(User.nombre == body.nombre).first()
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Ya existe un usuario con ese nombre",
-        )
-
-    user = User(
-        nombre=body.nombre,
-        password_hash=_hash_password(body.password),
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    token = _create_token(user)
-    return TokenResponse(
-        access_token=token,
-        user_id=user.id,
-        nombre=user.nombre,
-        is_admin=user.is_admin,
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="El registro de nuevos participantes está cerrado para este torneo. Contactá al administrador.",
     )
 
 
