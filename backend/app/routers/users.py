@@ -13,8 +13,10 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 @router.get("", response_model=List[UserRanking])
 def get_ranking(db: Session = Depends(get_db)) -> List[UserRanking]:
     """Return all users sorted by puntos_totales DESC, aciertos_perfectos DESC, with ranking position."""
+    # Filter out admin users
     users = (
         db.query(User)
+        .filter(User.is_admin == False)
         .order_by(User.puntos_totales.desc(), User.aciertos_perfectos.desc())
         .all()
     )
