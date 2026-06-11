@@ -1,6 +1,4 @@
-"""Validation service — deadline checks for predictions."""
-
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from app.models import Match
 
@@ -9,10 +7,8 @@ def can_predict(match: Match) -> bool:
     """
     Check if predictions are still allowed for this match.
 
-    Deadline: 23:59:59 UTC of the day BEFORE match.fecha_hora.
+    Deadline: Allow predictions until the match kickoff time (match.fecha_hora in UTC).
     """
-    deadline = match.fecha_hora.replace(
-        hour=23, minute=59, second=59, microsecond=0
-    ) - timedelta(days=1)
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    return now_utc < match.fecha_hora
 
-    return datetime.now(timezone.utc).replace(tzinfo=None) < deadline
