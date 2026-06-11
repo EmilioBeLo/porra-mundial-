@@ -24,6 +24,12 @@
            id="nav-leaderboard">
           🏆 Clasificación
         </a>
+        <a [routerLink]="['/rules']"
+           routerLinkActive="text-amber-400"
+           class="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-all duration-200"
+           id="nav-rules">
+          📜 Reglas
+        </a>
         @if (auth.isAdmin()) {
           <a routerLink="/admin"
              routerLinkActive="bg-white/10 text-white"
@@ -88,6 +94,13 @@
            class="block px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-all duration-200 no-underline"
            id="nav-mobile-leaderboard">
           🏆 Clasificación
+        </a>
+        <a [routerLink]="['/rules']"
+           routerLinkActive="text-amber-400"
+           (click)="closeMenu()"
+           class="block px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition-all duration-200 no-underline"
+           id="nav-mobile-rules">
+          📜 Reglas
         </a>
         @if (auth.isAdmin()) {
           <a routerLink="/admin"
