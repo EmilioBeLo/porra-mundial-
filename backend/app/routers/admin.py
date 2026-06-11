@@ -1,0 +1,95 @@
+from typing import Set
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.dependencies import require_admin
+from app.models import Match, Prediction, User
+from app.schemas import MatchCreate, MatchResponse, MatchResultUpdate, RecalculationResult
+from app.services.api_football_service import fetch_and_sync_fixtures, sync_match_results
+from app.services.scoring_service import calculate_points, recalculate_match
+
+router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+@router.post("/matches", response_model=MatchResponse, status_code=status.HTTP_201_CREATED)
+def create_match(
+    body: MatchCreate,
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> MatchResponse:
+    """Create a new match. Requires admin."""
+    match = Match(
+        equipo_local=body.equipo_local,
+        equipo_visitante=body.equipo_visitante,
+        fecha_hora=body.fecha_hora,
+        grupo_o_fase=body.grupo_o_fase,
+        es_partido_doble=body.es_partido_doble,
+    )
+    db.add(match)
+    db.commit()
+    db.refresh(match)
+    return MatchResponse.model_validate(match)
+
+
+@router.put("/matches/{match_id}/result", response_model=RecalculationResult)
+def update_result(
+    match_id: int,
+    body: MatchResultUpdate,
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> RecalculationResult:
+    """
+    Update a match result and trigger full recalculation.
+
+    Flow:
+    1. Update match with real scores.
+    2. Calculate points for ALL predictions of this match.
+    3. Recalculate puntos_totales and aciertos_perfectos for each affected user.
+    4. Commit everything in a single transaction.
+    """
+    match = db.query(Match).filter(Match.id == match_id).first()
+    if not match:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Partido no encontrado",
+        )
+
+    # Step 1: Update match result
+    match.goles_local_real = body.goles_local_real
+    match.goles_visitante_real = body.goles_visitante_real
+
+    # Step 2: Get all predictions for this match to compute response metrics
+    predictions = db.query(Prediction).filter(Prediction.match_id == match_id).all()
+    affected_user_ids = {p.user_id for p in predictions}
+
+    # Step 3: Recalculate
+    recalculate_match(db, match)
+
+    # Step 4: Single commit
+    db.commit()
+
+    return RecalculationResult(
+        match_id=match_id,
+        predictions_updated=len(predictions),
+        users_updated=len(affected_user_ids),
+    )
+
+
+@router.post("/sync/matches", status_code=status.HTTP_200_OK)
+def sync_matches(
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Fetch and sync fixtures from API-Football. Requires admin."""
+    return fetch_and_sync_fixtures(db)
+
+
+@router.post("/sync/results", status_code=status.HTTP_200_OK)
+def sync_results(
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Fetch and sync match results from API-Football. Requires admin."""
+    return sync_match_results(db)

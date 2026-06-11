@@ -1,0 +1,174 @@
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Hero Section -->
+  <div class="text-center mb-10 animate-fade-in-up">
+    <h1 class="font-display text-4xl sm:text-5xl font-extrabold text-white mb-3">
+      <span class="bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent">
+        Porra Mundial
+      </span>
+      <span class="text-white"> 2026</span>
+    </h1>
+    <p class="text-slate-400 text-lg max-w-xl mx-auto">
+      Predecí los resultados, sumá puntos y demostrá que sos el que más sabe de fútbol.
+    </p>
+
+    <!-- Countdown to next match -->
+    @if (nextMatch(); as nm) {
+      <div class="mt-6 inline-flex items-center gap-3 glass-card px-6 py-3 animate-pulse-glow" id="next-match-countdown">
+        <span class="text-sm text-slate-400">Próximo partido:</span>
+        <span class="font-display font-bold text-white">
+          {{ nm.equipo_local }} vs {{ nm.equipo_visitante }}
+        </span>
+        <span class="text-accent-400 font-mono font-bold text-sm">
+          {{ nm.fecha_hora | countdown }}
+        </span>
+      </div>
+    }
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <app-loading-spinner />
+  } @else {
+    <!-- Match Groups -->
+    <div class="space-y-10 stagger-children">
+      @for (group of groupedMatches(); track group.phase) {
+        <section>
+          <h2 class="font-display text-xl font-bold text-white mb-4 flex items-center gap-2" id="phase-{{ group.phase }}">
+            <span class="w-1 h-6 bg-gradient-to-b from-accent-400 to-accent-600 rounded-full"></span>
+            {{ group.phase }}
+          </h2>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            @for (item of group.matches; track item.match.id) {
+              <div
+                class="glass-card glass-card-hover p-5 relative overflow-hidden"
+                [ngClass]="{
+                  'border-emerald-500/30': getPointsBadgeClass(item) === 'badge-perfect',
+                  'border-accent-500/30': getPointsBadgeClass(item) === 'badge-tendency',
+                  'border-rose-500/30': getPointsBadgeClass(item) === 'badge-miss'
+                }"
+                id="match-card-{{ item.match.id }}"
+              >
+                <!-- Double match badge -->
+                @if (item.match.es_partido_doble) {
+                  <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-accent-500/20 text-accent-400 text-[10px] font-bold uppercase tracking-wider">
+                    x2
+                  </div>
+                }
+
+                <!-- Teams row -->
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex-1 text-center">
+                    <span class="font-display font-bold text-white text-sm sm:text-base">{{ item.match.equipo_local }}</span>
+                  </div>
+                  <div class="px-3 text-slate-500 text-xs font-medium">VS</div>
+                  <div class="flex-1 text-center">
+                    <span class="font-display font-bold text-white text-sm sm:text-base">{{ item.match.equipo_visitante }}</span>
+                  </div>
+                </div>
+
+                <!-- Result row (if match has result) -->
+                @if (hasResult(item.match)) {
+                  <div class="flex items-center justify-center gap-3 mb-3">
+                    <span class="font-display text-2xl font-extrabold text-white">{{ item.match.goles_local_real }}</span>
+                    <span class="text-slate-500 text-xs">-</span>
+                    <span class="font-display text-2xl font-extrabold text-white">{{ item.match.goles_visitante_real }}</span>
+                  </div>
+                }
+
+                <!-- Countdown / Date -->
+                <div class="text-center mb-3">
+                  @if (!isDeadlinePassed(item.match)) {
+                    <span class="text-xs text-accent-400 font-mono" id="match-countdown-{{ item.match.id }}">
+                      ⏱ {{ item.match.fecha_hora | countdown }}
+                    </span>
+                  } @else {
+                    <span class="text-xs text-slate-500">
+                      {{ item.match.fecha_hora | date:'dd/MM/yyyy HH:mm' }}
+                    </span>
+                  }
+                </div>
+
+                <!-- Prediction section -->
+                @if (auth.isLoggedIn()) {
+                  @if (!isDeadlinePassed(item.match)) {
+                    <!-- Editable prediction -->
+                    <div class="flex items-center justify-center gap-2 mt-3">
+                      <input
+                        type="number"
+                        min="0"
+                        max="20"
+                        [(ngModel)]="item.golesLocalPred"
+                        class="input-score"
+                        placeholder="0"
+                        id="pred-local-{{ item.match.id }}"
+                      />
+                      <span class="text-slate-500 text-xs font-bold">-</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="20"
+                        [(ngModel)]="item.golesVisitantePred"
+                        class="input-score"
+                        placeholder="0"
+                        id="pred-visitante-{{ item.match.id }}"
+                      />
+                      <button
+                        (click)="savePrediction(item)"
+                        [disabled]="item.isSaving || item.golesLocalPred === null || item.golesVisitantePred === null"
+                        class="btn-primary !py-1.5 !px-3 !text-xs ml-2"
+                        id="save-pred-{{ item.match.id }}"
+                      >
+                        @if (item.isSaving) {
+                          <span class="animate-spin inline-block w-3 h-3 border-2 border-slate-900 border-t-transparent rounded-full"></span>
+                        } @else {
+                          Guardar
+                        }
+                      </button>
+                    </div>
+
+                    @if (item.saveSuccess) {
+                      <p class="text-emerald-400 text-xs text-center mt-2 animate-slide-down">✅ Predicción guardada</p>
+                    }
+                    @if (item.saveError) {
+                      <p class="text-rose-400 text-xs text-center mt-2 animate-slide-down">❌ {{ item.saveError }}</p>
+                    }
+                  } @else {
+                    <!-- Read-only prediction -->
+                    @if (item.prediction) {
+                      <div class="flex items-center justify-center gap-4 mt-3">
+                        <div class="text-center">
+                          <span class="text-xs text-slate-500 block">Tu predicción</span>
+                          <span class="font-display font-bold text-slate-300">
+                            {{ item.prediction.goles_local_pred }} - {{ item.prediction.goles_visitante_pred }}
+                          </span>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ getPointsBadgeClass(item) }}" id="points-badge-{{ item.match.id }}">
+                          {{ getPointsLabel(item) }}
+                        </span>
+                      </div>
+                    } @else {
+                      <p class="text-slate-500 text-xs text-center mt-3">No predijiste este partido</p>
+                    }
+                  }
+                } @else {
+                  <p class="text-slate-500 text-xs text-center mt-3">
+                    <a routerLink="/login" class="text-accent-400 hover:text-accent-300">Iniciá sesión</a> para predecir
+                  </p>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      @if (groupedMatches().length === 0) {
+        <div class="text-center py-20">
+          <div class="text-6xl mb-4">🏟️</div>
+          <h2 class="font-display text-xl font-bold text-white mb-2">No hay partidos todavía</h2>
+          <p class="text-slate-400">Los partidos aparecerán cuando el admin los cargue.</p>
+        </div>
+      }
+    </div>
+  }
+</div>

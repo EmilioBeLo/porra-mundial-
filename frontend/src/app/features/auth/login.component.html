@@ -1,0 +1,67 @@
+<div class="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 animate-fade-in-up">
+  <div class="w-full max-w-md">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="text-5xl mb-4">⚽</div>
+      <h1 class="font-display text-3xl font-bold text-white mb-2">Bienvenido de vuelta</h1>
+      <p class="text-slate-400 text-sm">Ingresá a tu cuenta para seguir prediciendo</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="glass-card p-8">
+      @if (auth.loginError()) {
+        <div class="mb-6 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm animate-slide-down" id="login-error">
+          {{ auth.loginError() }}
+        </div>
+      }
+
+      <form (ngSubmit)="onSubmit()" class="space-y-5">
+        <div>
+          <label for="login-nombre" class="block text-sm font-medium text-slate-300 mb-1.5">Nombre de usuario</label>
+          <input
+            id="login-nombre"
+            type="text"
+            [(ngModel)]="nombre"
+            name="nombre"
+            class="input-field"
+            placeholder="Tu nombre"
+            autocomplete="username"
+            required
+          />
+        </div>
+
+        <div>
+          <label for="login-password" class="block text-sm font-medium text-slate-300 mb-1.5">Contraseña</label>
+          <input
+            id="login-password"
+            type="password"
+            [(ngModel)]="password"
+            name="password"
+            class="input-field"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="btn-primary w-full !py-3 !text-base"
+          [disabled]="!nombre.trim() || !password.trim()"
+          id="login-submit-btn"
+        >
+          Iniciar Sesión
+        </button>
+      </form>
+
+      <div class="mt-6 text-center">
+        <p class="text-sm text-slate-400">
+          ¿No tenés cuenta?
+          <a routerLink="/register" class="text-accent-400 hover:text-accent-300 font-medium transition-colors" id="login-register-link">
+            Registrate acá
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

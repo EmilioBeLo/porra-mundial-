@@ -1,0 +1,117 @@
+"""Scoring service — calculates points for predictions."""
+
+from typing import Tuple
+from sqlalchemy.orm import Session
+
+from app.models import Match, Prediction, User
+
+
+def recalculate_match(db: Session, match: Match) -> None:
+    """
+    Recalculate points for all predictions of this match and update
+    affected users' points and perfect counts.
+    """
+    predictions = db.query(Prediction).filter(Prediction.match_id == match.id).all()
+
+    affected_user_ids = set()
+
+    for prediction in predictions:
+        points, _is_perfect = calculate_points(prediction, match)
+        prediction.puntos_obtenidos = points
+        affected_user_ids.add(prediction.user_id)
+
+    for user_id in affected_user_ids:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            continue
+
+        user_predictions = db.query(Prediction).filter(Prediction.user_id == user_id).all()
+
+        total_points = 0
+        perfect_count = 0
+
+        for pred in user_predictions:
+            total_points += pred.puntos_obtenidos
+
+            pred_match = db.query(Match).filter(Match.id == pred.match_id).first()
+            if pred_match and pred_match.goles_local_real is not None:
+                _pts, is_perfect = calculate_points(pred, pred_match)
+                if is_perfect:
+                    perfect_count += 1
+
+        user.puntos_totales = total_points
+        user.aciertos_perfectos = perfect_count
+
+
+def calculate_points(prediction: Prediction, match: Match) -> Tuple[int, bool]:
+    """
+    Calculate points for a single prediction against the actual result.
+
+    Returns:
+        Tuple of (total_points, is_perfect).
+        is_perfect is True when the prediction exactly matches the result
+        (before any multiplier).
+    """
+    if match.goles_local_real is None or match.goles_visitante_real is None:
+        return 0, False
+
+    base_points = 0
+    is_perfect = False
+
+    # Perfect score: exact match
+    if (
+        prediction.goles_local_pred == match.goles_local_real
+        and prediction.goles_visitante_pred == match.goles_visitante_real
+    ):
+        base_points = 3
+        is_perfect = True
+
+    # Tendency: correct winner or correct draw
+    elif _same_tendency(prediction, match):
+        base_points = 1
+
+    # Apply x2 multiplier for double-point matches
+    multiplier = 2 if match.es_partido_doble else 1
+
+    return base_points * multiplier, is_perfect
+
+
+def _same_tendency(prediction: Prediction, match: Match) -> bool:
+    """Check if the prediction has the same tendency (win/draw/loss) as the real result."""
+    pred_diff = prediction.goles_local_pred - prediction.goles_visitante_pred
+    real_diff = match.goles_local_real - match.goles_visitante_real  # type: ignore[operator]
+
+    return (
+        (pred_diff > 0 and real_diff > 0)
+        or (pred_diff == 0 and real_diff == 0)
+        or (pred_diff < 0 and real_diff < 0)
+    )
+
+
+def recalculate_all_users_points(db: Session, league_id: int) -> None:
+    """Recalculate points and perfect count for all users for a specific league."""
+    users = db.query(User).all()
+    for user in users:
+        preds = (
+            db.query(Prediction)
+            .join(Match)
+            .filter(Prediction.user_id == user.id, Match.league_id == league_id)
+            .all()
+        )
+        puntos_totales = sum(p.puntos_obtenidos for p in preds)
+
+        perfectos = 0
+        for p in preds:
+            match = p.match
+            if (
+                match.goles_local_real is not None
+                and match.goles_visitante_real is not None
+                and p.goles_local_pred == match.goles_local_real
+                and p.goles_visitante_pred == match.goles_visitante_real
+            ):
+                perfectos += 1
+
+        user.puntos_totales = puntos_totales
+        user.aciertos_perfectos = perfectos
+    db.commit()
+

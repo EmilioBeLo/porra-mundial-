@@ -1,0 +1,69 @@
+<div class="glass-card glass-card-hover p-5 relative overflow-hidden" id="prediction-card-{{ match().id }}">
+  @if (match().es_partido_doble) {
+    <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-accent-500/20 text-accent-400 text-[10px] font-bold uppercase tracking-wider">
+      x2
+    </div>
+  }
+
+  <!-- Teams -->
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex-1 text-center">
+      <span class="font-display font-bold text-white text-sm">{{ match().equipo_local }}</span>
+    </div>
+    <span class="px-3 text-slate-500 text-xs font-medium">VS</span>
+    <div class="flex-1 text-center">
+      <span class="font-display font-bold text-white text-sm">{{ match().equipo_visitante }}</span>
+    </div>
+  </div>
+
+  <!-- Result -->
+  @if (hasResult()) {
+    <div class="flex items-center justify-center gap-3 mb-3">
+      <span class="font-display text-2xl font-extrabold text-white">{{ match().goles_local_real }}</span>
+      <span class="text-slate-500">-</span>
+      <span class="font-display text-2xl font-extrabold text-white">{{ match().goles_visitante_real }}</span>
+    </div>
+  }
+
+  <!-- Countdown -->
+  <div class="text-center text-xs text-accent-400 font-mono mb-3">
+    ⏱ {{ match().fecha_hora | countdown }}
+  </div>
+
+  <!-- Prediction inputs -->
+  @if (isLoggedIn() && isEditable()) {
+    <div class="flex items-center justify-center gap-2 mt-3">
+      <input
+        type="number"
+        min="0"
+        max="20"
+        [(ngModel)]="golesLocal"
+        class="input-score"
+        placeholder="0"
+        id="card-pred-local-{{ match().id }}"
+      />
+      <span class="text-slate-500 text-xs font-bold">-</span>
+      <input
+        type="number"
+        min="0"
+        max="20"
+        [(ngModel)]="golesVisitante"
+        class="input-score"
+        placeholder="0"
+        id="card-pred-visitante-{{ match().id }}"
+      />
+      <button
+        (click)="onSave()"
+        [disabled]="golesLocal === null || golesVisitante === null"
+        class="btn-primary !py-1.5 !px-3 !text-xs ml-2"
+        id="card-save-{{ match().id }}"
+      >
+        Guardar
+      </button>
+    </div>
+  } @else if (prediction()) {
+    <div class="text-center mt-3 text-sm text-slate-300">
+      Tu predicción: <span class="font-bold">{{ prediction()!.goles_local_pred }} - {{ prediction()!.goles_visitante_pred }}</span>
+    </div>
+  }
+</div>

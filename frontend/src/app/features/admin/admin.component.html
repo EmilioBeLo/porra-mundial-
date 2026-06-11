@@ -1,0 +1,377 @@
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4 animate-fade-in-up">
+    <div>
+      <h1 class="font-display text-3xl sm:text-4xl font-extrabold text-white">
+        ⚙️ Panel de Admin
+      </h1>
+      <p class="text-slate-400 mt-1">Gestioná partidos y resultados</p>
+    </div>
+    <button (click)="toggleCreateForm()" class="btn-primary" id="admin-toggle-create-btn">
+      @if (showCreateForm()) {
+        ✕ Cerrar
+      } @else {
+        + Crear Partido
+      }
+    </button>
+  </div>
+
+  <!-- Configuración de Competición -->
+  <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-8 animate-fade-in-up" id="competition-settings">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">🏆</span>
+        <div>
+          <h2 class="font-display text-lg font-bold text-white">Configuración de Competición</h2>
+          <p class="text-slate-400 text-xs mt-0.5">Definí cuál es la liga activa para la app</p>
+        </div>
+      </div>
+      
+      <div class="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+        <div class="relative min-w-[200px]">
+          <select
+            [value]="activeCompetition()?.league_id"
+            (change)="changeCompetition(+$any($event.target).value)"
+            [disabled]="changingCompetition()"
+            class="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer pr-10"
+            id="competition-select"
+          >
+            @for (comp of competitions(); track comp.league_id) {
+              <option [value]="comp.league_id" class="bg-slate-900 text-white">
+                {{ comp.name }} ({{ comp.season }})
+              </option>
+            }
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert / Status Subtext -->
+    <div class="mt-4 pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="text-xs text-slate-400">
+        @if (activeCompetition()) {
+          Liga activa actual: <strong class="text-white">{{ activeCompetition()?.name }}</strong> (Temporada {{ activeCompetition()?.season }}).
+        } @else {
+          Cargando competición activa...
+        }
+        <span class="block sm:inline sm:ml-2 text-amber-500">⚠️ ¡Atención! Cambiar la liga activa recalcula todos los puntajes de los usuarios inmediatamente.</span>
+      </div>
+
+      @if (changingCompetition()) {
+        <div class="text-xs text-accent-400 flex items-center gap-2">
+          <span class="animate-spin inline-block w-3 h-3 border-2 border-accent-400 border-t-transparent rounded-full"></span>
+          Actualizando competición...
+        </div>
+      }
+    </div>
+
+    <!-- Success/Error toast messages for competition change -->
+    @if (competitionMsg()) {
+      <div
+        class="mt-4 p-3 rounded-lg text-sm animate-slide-down border"
+        [class]="competitionMsgType() === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'"
+        id="competition-msg"
+      >
+        {{ competitionMsg() }}
+      </div>
+    }
+  </div>
+
+  <!-- Create Match Form -->
+  @if (showCreateForm()) {
+    <div class="glass-card p-6 mb-8 animate-slide-down" id="create-match-form">
+      <h2 class="font-display text-lg font-bold text-white mb-4">Nuevo Partido</h2>
+
+      @if (createMsg()) {
+        <div
+          class="mb-4 p-3 rounded-lg text-sm animate-slide-down border"
+          [class]="createMsgType() === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'"
+          id="create-match-msg"
+        >
+          {{ createMsg() }}
+        </div>
+      }
+
+      <form (ngSubmit)="createMatch()" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label for="new-equipo-local" class="block text-sm font-medium text-slate-300 mb-1.5">Equipo Local</label>
+          <input
+            id="new-equipo-local"
+            type="text"
+            [(ngModel)]="newMatch.equipo_local"
+            name="equipo_local"
+            class="input-field"
+            placeholder="Ej: Argentina"
+            required
+          />
+        </div>
+        <div>
+          <label for="new-equipo-visitante" class="block text-sm font-medium text-slate-300 mb-1.5">Equipo Visitante</label>
+          <input
+            id="new-equipo-visitante"
+            type="text"
+            [(ngModel)]="newMatch.equipo_visitante"
+            name="equipo_visitante"
+            class="input-field"
+            placeholder="Ej: Brasil"
+            required
+          />
+        </div>
+        <div>
+          <label for="new-fecha-hora" class="block text-sm font-medium text-slate-300 mb-1.5">Fecha y Hora</label>
+          <input
+            id="new-fecha-hora"
+            type="datetime-local"
+            [(ngModel)]="newMatch.fecha_hora"
+            name="fecha_hora"
+            class="input-field"
+            required
+          />
+        </div>
+        <div>
+          <label for="new-grupo-fase" class="block text-sm font-medium text-slate-300 mb-1.5">Grupo / Fase</label>
+          <input
+            id="new-grupo-fase"
+            type="text"
+            [(ngModel)]="newMatch.grupo_o_fase"
+            name="grupo_o_fase"
+            class="input-field"
+            placeholder="Ej: Grupo A"
+          />
+        </div>
+        <div class="flex items-center gap-2 sm:col-span-2">
+          <input
+            id="new-es-doble"
+            type="checkbox"
+            [(ngModel)]="newMatch.es_partido_doble"
+            name="es_partido_doble"
+            class="w-4 h-4 rounded bg-white/5 border-white/10 text-accent-500 focus:ring-accent-500"
+          />
+          <label for="new-es-doble" class="text-sm text-slate-300">Partido doble (puntos x2)</label>
+        </div>
+        <div class="sm:col-span-2">
+          <button
+            type="submit"
+            class="btn-primary"
+            [disabled]="creating() || !newMatch.equipo_local.trim() || !newMatch.equipo_visitante.trim() || !newMatch.fecha_hora"
+            id="create-match-submit-btn"
+          >
+            @if (creating()) {
+              <span class="animate-spin inline-block w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full mr-2"></span>
+              Creando...
+            } @else {
+              Crear Partido
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- API-Football Integration -->
+  <div class="glass-card p-6 mb-8 animate-fade-in-up" id="api-football-integration">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="text-2xl">⚽</span>
+      <div>
+        <h2 class="font-display text-lg font-bold text-white">Integración API-Football</h2>
+        <p class="text-slate-400 text-xs mt-0.5">Sincronizá el fixture y resultados en tiempo real desde la API externa</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Sincronizar Fixture Card -->
+      <div class="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col justify-between">
+        <div>
+          <h3 class="font-display font-semibold text-white text-sm">Calendario de Partidos</h3>
+          <p class="text-slate-400 text-xs mt-1.5 leading-relaxed">
+            Trae y actualiza todos los partidos del Mundial 2026 configurados en la API.
+          </p>
+        </div>
+        
+        <div class="mt-4">
+          @if (syncMatchesMsg()) {
+            <div
+              class="mb-3 p-3 rounded-lg text-xs animate-slide-down border"
+              [class]="syncMatchesMsgType() === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'"
+              id="sync-matches-msg"
+            >
+              {{ syncMatchesMsg() }}
+            </div>
+          }
+          
+          <button
+            (click)="syncMatches()"
+            [disabled]="syncingMatches()"
+            class="btn-primary w-full flex items-center justify-center gap-2 !py-2.5"
+            id="sync-matches-btn"
+          >
+            @if (syncingMatches()) {
+              <span class="animate-spin inline-block w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full"></span>
+              Sincronizando...
+            } @else {
+              Sincronizar Calendario
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Actualizar Resultados Card -->
+      <div class="bg-white/5 border border-white/10 rounded-xl p-5 flex flex-col justify-between">
+        <div>
+          <h3 class="font-display font-semibold text-white text-sm">Resultados en Vivo</h3>
+          <p class="text-slate-400 text-xs mt-1.5 leading-relaxed">
+            Actualiza los resultados reales de los partidos jugados, recalculando las predicciones y el ranking de usuarios de inmediato.
+          </p>
+        </div>
+        
+        <div class="mt-4">
+          @if (syncResultsMsg()) {
+            <div
+              class="mb-3 p-3 rounded-lg text-xs animate-slide-down border"
+              [class]="syncResultsMsgType() === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'"
+              id="sync-results-msg"
+            >
+              {{ syncResultsMsg() }}
+            </div>
+          }
+          
+          <button
+            (click)="syncResults()"
+            [disabled]="syncingResults()"
+            class="w-full flex items-center justify-center gap-2 !py-2.5 rounded-xl font-display font-bold text-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg hover:shadow-orange-950/20 hover:scale-[1.01]"
+            id="sync-results-btn"
+          >
+            @if (syncingResults()) {
+              <span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+              Actualizando...
+            } @else {
+              Actualizar Resultados
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex items-center gap-3 mb-6 overflow-x-auto pb-2" id="admin-filters">
+    <button
+      (click)="filterFase.set('')"
+      class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200"
+      [class]="!filterFase() ? 'bg-accent-500 text-slate-900 font-bold' : 'bg-white/5 text-slate-300 hover:bg-white/10'"
+      id="admin-filter-all"
+    >
+      Todos
+    </button>
+    @for (fase of fases(); track fase) {
+      <button
+        (click)="filterFase.set(fase)"
+        class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200"
+        [class]="filterFase() === fase ? 'bg-accent-500 text-slate-900 font-bold' : 'bg-white/5 text-slate-300 hover:bg-white/10'"
+        id="admin-filter-{{ fase }}"
+      >
+        {{ fase }}
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <app-loading-spinner />
+  } @else {
+    <!-- Match list -->
+    <div class="space-y-4 stagger-children" id="admin-match-list">
+      @for (match of filteredMatches; track match.id) {
+        <div class="glass-card p-5" id="admin-match-{{ match.id }}">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+            <!-- Match info -->
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-display font-bold text-white">{{ match.equipo_local }}</span>
+                <span class="text-slate-500 text-xs">vs</span>
+                <span class="font-display font-bold text-white">{{ match.equipo_visitante }}</span>
+                @if (match.es_partido_doble) {
+                  <span class="px-1.5 py-0.5 rounded bg-accent-500/20 text-accent-400 text-[10px] font-bold">x2</span>
+                }
+              </div>
+              <div class="flex items-center gap-3 text-xs text-slate-500">
+                <span>{{ match.grupo_o_fase }}</span>
+                <span>•</span>
+                <span>{{ match.fecha_hora | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+              @if (match.goles_local_real !== null && match.goles_visitante_real !== null) {
+                <div class="mt-2">
+                  <span class="text-xs text-slate-400">Resultado actual: </span>
+                  <span class="font-display font-bold text-emerald-400">{{ match.goles_local_real }} - {{ match.goles_visitante_real }}</span>
+                </div>
+              } @else {
+                <div class="mt-2">
+                  <span class="text-xs text-slate-500 italic">Sin resultado</span>
+                </div>
+              }
+            </div>
+
+            <!-- Result form -->
+            <div class="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                max="20"
+                [(ngModel)]="match.editGolesLocal"
+                class="input-score"
+                placeholder="0"
+                id="admin-goles-local-{{ match.id }}"
+              />
+              <span class="text-slate-500 text-xs font-bold">-</span>
+              <input
+                type="number"
+                min="0"
+                max="20"
+                [(ngModel)]="match.editGolesVisitante"
+                class="input-score"
+                placeholder="0"
+                id="admin-goles-visitante-{{ match.id }}"
+              />
+              <button
+                (click)="submitResult(match)"
+                [disabled]="match.isSaving || match.editGolesLocal === null || match.editGolesVisitante === null"
+                class="btn-primary !py-1.5 !px-3 !text-xs ml-1"
+                id="admin-submit-result-{{ match.id }}"
+              >
+                @if (match.isSaving) {
+                  <span class="animate-spin inline-block w-3 h-3 border-2 border-slate-900 border-t-transparent rounded-full"></span>
+                } @else {
+                  Guardar
+                }
+              </button>
+            </div>
+          </div>
+
+          <!-- Save message -->
+          @if (match.saveMsg) {
+            <div
+              class="mt-3 text-xs animate-slide-down"
+              [class.text-emerald-400]="match.saveMsgType === 'success'"
+              [class.text-rose-400]="match.saveMsgType === 'error'"
+            >
+              @if (match.saveMsgType === 'success') { ✅ } @else { ❌ }
+              {{ match.saveMsg }}
+            </div>
+          }
+        </div>
+      }
+
+      @if (filteredMatches.length === 0) {
+        <div class="text-center py-16">
+          <div class="text-5xl mb-4">📋</div>
+          <h2 class="font-display text-xl font-bold text-white mb-2">No hay partidos</h2>
+          <p class="text-slate-400">Creá un partido usando el botón de arriba.</p>
+        </div>
+      }
+    </div>
+  }
+</div>
