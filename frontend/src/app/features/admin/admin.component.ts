@@ -250,7 +250,7 @@ export class AdminComponent implements OnInit {
     this.api.syncResults().subscribe({
       next: (res) => {
         this.syncingResults.set(false);
-        this.syncResultsMsg.set(`Sincronizados resultados de ${res.updated_matches_count} partidos. ¡Predicciones y ranking recalculados!`);
+        this.syncResultsMsg.set(`Sincronizados resultados de ${res.updated_matches_count} partidos. ¡Pronósticos y clasificación recalculados!`);
         this.syncResultsMsgType.set('success');
         this.loadMatches();
         setTimeout(() => {

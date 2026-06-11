@@ -8,7 +8,7 @@
       <span class="text-white"> 2026</span>
     </h1>
     <p class="text-slate-400 text-lg max-w-xl mx-auto">
-      Predecí los resultados, sumá puntos y demostrá que sos el que más sabe de fútbol.
+      Pronostica los resultados, suma puntos y demuestra que eres el que más sabe de fútbol.
     </p>
 
     <!-- Countdown to next match -->
@@ -116,7 +116,7 @@
             <div class="text-center py-20 bg-slate-900/20 border border-white/5 rounded-2xl backdrop-blur-md animate-fade-in">
               <div class="text-6xl mb-4">🏟️</div>
               <h2 class="font-display text-xl font-bold text-white mb-2">No se encontraron partidos</h2>
-              <p class="text-slate-400">Probá con otros filtros o buscando otro equipo.</p>
+              <p class="text-slate-400">Prueba con otros filtros o buscando otro equipo.</p>
             </div>
           }
         } @else {
@@ -139,7 +139,7 @@
             <div class="text-center py-20 bg-slate-900/20 border border-white/5 rounded-2xl backdrop-blur-md animate-fade-in">
               <div class="text-6xl mb-4">🏟️</div>
               <h2 class="font-display text-xl font-bold text-white mb-2">No se encontraron partidos</h2>
-              <p class="text-slate-400">Probá con otros filtros o buscando otro equipo.</p>
+              <p class="text-slate-400">Prueba con otros filtros o buscando otro equipo.</p>
             </div>
           }
         }
@@ -238,7 +238,7 @@
         </div>
 
         @if (item.saveSuccess) {
-          <p class="text-emerald-400 text-xs text-center mt-2 animate-slide-down">✅ Predicción guardada</p>
+          <p class="text-emerald-400 text-xs text-center mt-2 animate-slide-down">✅ Pronóstico guardado</p>
         }
         @if (item.saveError) {
           <p class="text-rose-400 text-xs text-center mt-2 animate-slide-down">❌ {{ item.saveError }}</p>
@@ -248,7 +248,7 @@
         @if (item.prediction) {
           <div class="flex items-center justify-center gap-4 mt-3">
             <div class="text-center">
-              <span class="text-xs text-slate-500 block">Tu predicción</span>
+              <span class="text-xs text-slate-500 block">Tu pronóstico</span>
               <span class="font-display font-bold text-slate-300">
                 {{ item.prediction.goles_local_pred }} - {{ item.prediction.goles_visitante_pred }}
               </span>
@@ -258,12 +258,12 @@
             </span>
           </div>
         } @else {
-          <p class="text-slate-500 text-xs text-center mt-3">No predijiste este partido</p>
+          <p class="text-slate-500 text-xs text-center mt-3">No pronosticaste este partido</p>
         }
       }
     } @else {
       <p class="text-slate-500 text-xs text-center mt-3">
-        <a routerLink="/login" class="text-accent-400 hover:text-accent-300">Iniciá sesión</a> para predecir
+        <a routerLink="/login" class="text-accent-400 hover:text-accent-300">Inicia sesión</a> para pronosticar
       </p>
     }
   </div>

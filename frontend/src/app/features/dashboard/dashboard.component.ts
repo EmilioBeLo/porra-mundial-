@@ -169,7 +169,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   getPointsLabel(item: MatchWithPrediction): string {
-    if (!item.prediction) return 'Sin predicción';
+    if (!item.prediction) return 'Sin pronóstico';
     if (!this.hasResult(item.match)) return 'Pendiente';
     return `${item.prediction.puntos_obtenidos} pts`;
   }

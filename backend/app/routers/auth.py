@@ -45,7 +45,7 @@ def register(body: AuthRequest, db: Session = Depends(get_db)) -> TokenResponse:
     """Register a new user and return a JWT token."""
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail="El registro de nuevos participantes está cerrado para este torneo. Contactá al administrador.",
+        detail="El registro de nuevos participantes está cerrado para este torneo. Contacta con el administrador.",
     )
 
 
