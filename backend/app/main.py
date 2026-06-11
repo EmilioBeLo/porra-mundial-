@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import Base, engine, SessionLocal, run_auto_migrations
 from app.models import SystemSetting
-from app.routers import admin, auth, matches, predictions, users, settings as settings_router
+from app.routers import admin, auth, matches, predictions, users, settings as settings_router, sync
 
 # Create all tables on startup
 Base.metadata.create_all(bind=engine)
@@ -56,6 +56,7 @@ app.include_router(matches.router)
 app.include_router(predictions.router)
 app.include_router(admin.router)
 app.include_router(settings_router.router)
+app.include_router(sync.router, prefix="/api/sync", tags=["sync"])
 
 
 @app.get("/api/health")

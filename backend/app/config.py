@@ -15,6 +15,8 @@ class Settings:
     API_FOOTBALL_LEAGUE_ID: int = int(os.getenv("API_FOOTBALL_LEAGUE_ID", "1"))
     API_FOOTBALL_SEASON: int = int(os.getenv("API_FOOTBALL_SEASON", "2026"))
 
+    SYNC_SECRET_KEY: str = os.getenv("SYNC_SECRET_KEY", "default-dev-sync-key")
+
     @property
     def CORS_ORIGINS(self) -> List[str]:
         origins_env = os.getenv("CORS_ORIGINS", "")
