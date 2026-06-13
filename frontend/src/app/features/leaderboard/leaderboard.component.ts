@@ -71,4 +71,44 @@ export class LeaderboardComponent implements OnInit {
       default: return 'h-12';
     }
   }
+
+  getTeamFlag(team: string): string {
+    if (!team) return '🛡️';
+    const teamLower = team.trim().toLowerCase();
+    switch (teamLower) {
+      case 'new zealand':
+      case 'nueva zelanda':
+        return '🇳🇿';
+      case 'haiti':
+      case 'haití':
+        return '🇭🇹';
+      case 'curaçao':
+      case 'curazao':
+        return '🇨🇼';
+      case 'ghana':
+        return '🇬🇭';
+      case 'cape verde':
+      case 'cabo verde':
+        return '🇨🇻';
+      case 'bosnia and herzegovina':
+      case 'bosnia y herzegovina':
+      case 'bosnia':
+        return '🇧🇦';
+      case 'jordan':
+      case 'jordania':
+        return '🇯🇴';
+      case 'saudi arabia':
+      case 'arabia saudita':
+      case 'arabia saudí':
+        return '🇸🇦';
+      case 'south africa':
+      case 'sudáfrica':
+        return '🇿🇦';
+      case 'iraq':
+      case 'irak':
+        return '🇮🇶';
+      default:
+        return '🛡️';
+    }
+  }
 }
