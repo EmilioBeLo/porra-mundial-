@@ -38,6 +38,8 @@ class UserPublic(BaseModel):
 
 class UserRanking(UserPublic):
     posicion: int
+    puntos_underdog: int
+    puntos_predicciones: int
 
 
 # ──────────────────────────────────────────────

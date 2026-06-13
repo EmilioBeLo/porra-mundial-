@@ -6,4 +6,6 @@ export interface User {
   is_admin: boolean;
   posicion?: number;
   assigned_team?: string | null;
+  puntos_underdog?: number;
+  puntos_predicciones?: number;
 }

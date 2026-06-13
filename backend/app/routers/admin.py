@@ -69,8 +69,9 @@ def update_result(
     predictions = db.query(Prediction).filter(Prediction.match_id == match_id).all()
     affected_user_ids = {p.user_id for p in predictions}
 
-    # Step 3: Recalculate
+    # Step 3: Recalculate match predictions and underdog points, then full standings sweep
     recalculate_match(db, match)
+    recalculate_all_users_points(db, league_id=1)
 
     # Step 4: Single commit
     db.commit()
@@ -80,6 +81,19 @@ def update_result(
         predictions_updated=len(predictions),
         users_updated=len(affected_user_ids),
     )
+
+
+@router.post("/recalculate", status_code=status.HTTP_200_OK)
+def trigger_recalculation(
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    Force a full points and standing recalculation for all users.
+    Requires admin.
+    """
+    recalculate_all_users_points(db, league_id=1)
+    return {"status": "success", "message": "Clasificación recalculada por completo"}
 
 
 @router.post("/sync/matches", status_code=status.HTTP_200_OK)

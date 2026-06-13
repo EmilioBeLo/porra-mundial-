@@ -52,14 +52,17 @@
     }
 
     <!-- Table (Desktop) -->
-    <div class="hidden sm:block glass-card overflow-hidden animate-fade-in-up" id="leaderboard-table">
+    <div class="hidden md:block glass-card overflow-hidden animate-fade-in-up" id="leaderboard-table">
       <table class="w-full">
         <thead>
           <tr class="border-b border-white/10">
             <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">#</th>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Nombre</th>
-            <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Puntos</th>
-            <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Aciertos Perfectos</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Jugador</th>
+            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Equipo Underdog</th>
+            <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Aciertos 🔥</th>
+            <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Pts Preds</th>
+            <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Pts Equipo</th>
+            <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Pts Totales</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
@@ -87,15 +90,27 @@
                     <span class="text-xs text-slate-500 ml-1">(tú)</span>
                   }
                 </span>
+              </td>
+              <td class="px-6 py-4">
                 @if (user.assigned_team) {
-                  <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">{{ user.assigned_team }}</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    🛡️ {{ user.assigned_team }}
+                  </span>
+                } @else {
+                  <span class="text-slate-500 text-xs">-</span>
                 }
               </td>
               <td class="px-6 py-4 text-right">
-                <span class="font-display font-bold text-accent-400">{{ user.puntos_totales }}</span>
+                <span class="text-emerald-400 font-medium">{{ user.aciertos_perfectos }}</span>
               </td>
               <td class="px-6 py-4 text-right">
-                <span class="text-emerald-400 font-medium">{{ user.aciertos_perfectos }}</span>
+                <span class="text-white font-medium">{{ user.puntos_predicciones }}</span>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <span class="text-amber-400 font-medium">+{{ user.puntos_underdog }}</span>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <span class="font-display font-bold text-amber-400 text-lg">{{ user.puntos_totales }}</span>
               </td>
             </tr>
           }
@@ -104,35 +119,60 @@
     </div>
 
     <!-- Cards (Mobile) -->
-    <div class="sm:hidden space-y-3 stagger-children" id="leaderboard-cards">
+    <div class="md:hidden space-y-3 stagger-children" id="leaderboard-cards">
       @for (user of sortedUsers(); track user.id) {
         <div
-          class="glass-card p-4 flex items-center gap-4"
+          class="glass-card p-4 flex flex-col gap-3"
           [ngClass]="{ 'border-accent-400/30': user.id === currentUserId() }"
           id="leaderboard-card-{{ user.id }}"
         >
-          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center font-display font-bold text-white">
-            @if (user.posicion && user.posicion <= 3) {
-              <span class="text-lg">{{ getMedalEmoji(user.posicion) }}</span>
+          <!-- Top Row: Rank, User Name, and Team Badge -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="font-display font-bold text-white text-lg">
+                @if (user.posicion && user.posicion <= 3) {
+                  {{ getMedalEmoji(user.posicion) }}
+                } @else {
+                  #{{ user.posicion }}
+                }
+              </span>
+              <span class="font-medium text-white" [class.text-accent-400]="user.id === currentUserId()">
+                {{ user.nombre }}
+                @if (user.id === currentUserId()) {
+                  <span class="text-xs text-slate-500 ml-1">(tú)</span>
+                }
+              </span>
+            </div>
+            @if (user.assigned_team) {
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                🛡️ {{ user.assigned_team }}
+              </span>
             } @else {
-              {{ user.posicion }}
+              <span class="text-slate-500 text-xs">-</span>
             }
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-medium text-white truncate" [class.text-accent-400]="user.id === currentUserId()">
-              {{ user.nombre }}
-              @if (user.id === currentUserId()) {
-                <span class="text-xs text-slate-500">(tú)</span>
-              }
-              @if (user.assigned_team) {
-                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">{{ user.assigned_team }}</span>
-              }
-            </p>
-            <p class="text-xs text-slate-400">{{ user.aciertos_perfectos }} aciertos perfectos</p>
-          </div>
-          <div class="text-right">
-            <span class="font-display font-bold text-accent-400 text-lg">{{ user.puntos_totales }}</span>
-            <span class="text-xs text-slate-500 block">pts</span>
+
+          <!-- Divider -->
+          <div class="border-t border-white/5"></div>
+
+          <!-- 4-column grid -->
+          <div class="grid grid-cols-4 gap-2 text-center text-xs">
+            <div>
+              <span class="text-slate-400 block mb-1">Aciertos 🔥</span>
+              <span class="text-emerald-400 font-bold block">{{ user.aciertos_perfectos }}</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block mb-1">Preds</span>
+              <span class="text-white font-medium block">{{ user.puntos_predicciones }}</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block mb-1">Equipo</span>
+              <span class="text-amber-400 font-medium block">+{{ user.puntos_underdog }}</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block mb-1">Total</span>
+              <span class="text-accent-400 font-extrabold block">{{ user.puntos_totales }}</span>
+            </div>
           </div>
         </div>
       }

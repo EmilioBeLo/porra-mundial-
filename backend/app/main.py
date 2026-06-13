@@ -20,6 +20,10 @@ try:
             SystemSetting(key="active_league_name", value="Mundial de Fútbol"),
         ])
         db.commit()
+    
+    # Recalculate standings on startup to ensure historical manual entries are updated/corrected
+    from app.services.scoring_service import recalculate_all_users_points
+    recalculate_all_users_points(db, league_id=1)
 finally:
     db.close()
 

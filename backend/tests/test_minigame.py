@@ -286,3 +286,65 @@ def test_recalculate_match_without_prediction_updates_minigame_points(db_session
     db_session.refresh(user)
     assert user.puntos_totales == 4
 
+
+def test_manual_result_entry_triggers_full_standing_recalculation_and_recalculate_endpoint(test_client, db_session):
+    # Setup: Admin and two users. One has Bosnia assigned.
+    admin = User(nombre="AdminUser", password_hash="hash", is_admin=True)
+    user1 = User(nombre="UserOne", password_hash="hash", is_admin=False, assigned_team="Bosnia and Herzegovina")
+    user2 = User(nombre="UserTwo", password_hash="hash", is_admin=False, assigned_team="New Zealand")
+    db_session.add_all([admin, user1, user2])
+    db_session.commit()
+
+    # Active league is 1. Ensure we restore active_league_id to 1.
+    active_league_setting = db_session.query(SystemSetting).filter(SystemSetting.key == "active_league_id").first()
+    if active_league_setting:
+        active_league_setting.value = "1"
+    else:
+        active_league_setting = SystemSetting(key="active_league_id", value="1")
+        db_session.add(active_league_setting)
+
+    # Let's create a match involving Bosnia and Herzegovina
+    match = Match(
+        equipo_local="Bosnia and Herzegovina",
+        equipo_visitante="Argentina",
+        fecha_hora=datetime.now(),
+        grupo_o_fase="Group Stage",
+        goles_local_real=None,
+        goles_visitante_real=None,
+        league_id=1
+    )
+    db_session.add(match)
+    db_session.commit()
+
+    # Admin auth token
+    token_admin = generate_token(admin.id)
+
+    # PUT /api/admin/matches/{match_id}/result
+    response = test_client.put(
+        f"/api/admin/matches/{match.id}/result",
+        json={"goles_local_real": 2, "goles_visitante_real": 1},
+        headers={"Authorization": f"Bearer {token_admin}"}
+    )
+    assert response.status_code == 200
+
+    # UserOne has Bosnia assigned -> Bosnia scored 2 goals -> should have 2 points now
+    db_session.refresh(user1)
+    assert user1.puntos_totales == 2
+
+    # Now let's test the POST /api/admin/recalculate endpoint
+    # Manually modify user1 points to 0 to simulate it being out of sync
+    user1.puntos_totales = 0
+    db_session.commit()
+
+    # Call /api/admin/recalculate
+    response = test_client.post(
+        "/api/admin/recalculate",
+        headers={"Authorization": f"Bearer {token_admin}"}
+    )
+    assert response.status_code == 200
+    assert response.json() == {"status": "success", "message": "Clasificación recalculada por completo"}
+
+    # Points should have been recalculated back to 2!
+    db_session.refresh(user1)
+    assert user1.puntos_totales == 2
+

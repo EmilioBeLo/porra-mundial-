@@ -77,3 +77,46 @@ def test_get_ranking_sorting_order(test_client, db_session):
     
     assert data[3]["nombre"] == "UserD"
     assert data[3]["posicion"] == 4
+
+
+def test_get_ranking_includes_points_breakdown(test_client, db_session):
+    from datetime import datetime, timezone
+    from app.models import Match
+
+    # Setup user
+    user = User(
+        nombre="RegularUser",
+        password_hash="hash",
+        is_admin=False,
+        puntos_totales=15,
+        assigned_team="Argentina"
+    )
+    
+    # Setup a finished match in league 1 (World Cup active)
+    match = Match(
+        equipo_local="Argentina",
+        equipo_visitante="Brazil",
+        fecha_hora=datetime.now(timezone.utc),
+        goles_local_real=3,
+        goles_visitante_real=3,  # 3 // 3 = 1. total points for underdog Argentina = 3 + 1 = 4 points
+        grupo_o_fase="Group A",
+        league_id=1
+    )
+    
+    db_session.add_all([user, match])
+    db_session.commit()
+
+    # Call endpoint
+    response = test_client.get("/api/users")
+    assert response.status_code == 200
+    
+    data = response.json()
+    assert len(data) == 1
+    u_data = data[0]
+    
+    # Argentina scored 3 goals, opponent scored 3 goals.
+    # Underdog points = 3 + (3 // 3) = 4 points.
+    assert u_data["puntos_underdog"] == 4
+    assert u_data["puntos_predicciones"] == 11
+    assert u_data["puntos_totales"] == 15
+
