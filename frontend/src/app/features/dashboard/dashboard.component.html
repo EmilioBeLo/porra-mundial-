@@ -266,5 +266,125 @@
         <a routerLink="/login" class="text-accent-400 hover:text-accent-300">Inicia sesión</a> para pronosticar
       </p>
     }
+
+    @if (isDeadlinePassed(item.match)) {
+      <div class="mt-4 pt-3 border-t border-white/5 flex justify-center">
+        <button
+          (click)="openCommunityPredictions(item.match)"
+          class="inline-flex items-center gap-1.5 text-xs text-accent-400 hover:text-accent-300 font-medium transition-colors"
+          type="button"
+          id="community-preds-btn-{{ item.match.id }}"
+        >
+          <span>👥 Pronósticos de la comunidad</span>
+        </button>
+      </div>
+    }
   </div>
 </ng-template>
+
+<!-- Glassmorphic Modal -->
+@if (showCommunityModal()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-300"
+    (click)="closeCommunityModal()"
+    id="community-modal-overlay"
+  >
+    <div
+      class="bg-slate-900/90 border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-scale-up"
+      (click)="$event.stopPropagation()"
+      id="community-modal-content"
+    >
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+        <div>
+          <h3 class="font-display font-bold text-white text-lg">Pronósticos de la Comunidad</h3>
+          @if (selectedMatchForModal(); as match) {
+            <p class="text-xs text-slate-400 mt-0.5">
+              {{ match.equipo_local }} vs {{ match.equipo_visitante }}
+            </p>
+          }
+        </div>
+        <button
+          (click)="closeCommunityModal()"
+          class="text-slate-400 hover:text-white transition-colors"
+          type="button"
+          aria-label="Cerrar modal"
+          id="close-community-modal-btn"
+        >
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+        @if (loadingCommunity()) {
+          <div class="flex flex-col items-center justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-2 border-accent-500 border-t-transparent mb-3"></div>
+            <p class="text-slate-400 text-sm">Cargando pronósticos...</p>
+          </div>
+        } @else if (communityError()) {
+          <div class="text-center py-6">
+            <p class="text-rose-400 text-sm mb-3">⚠️ {{ communityError() }}</p>
+            <button
+              @if (selectedMatchForModal(); as match) {
+                (click)="openCommunityPredictions(match)"
+              }
+              class="btn-primary !py-1.5 !px-3 !text-xs"
+              type="button"
+            >
+              Reintentar
+            </button>
+          </div>
+        } @else if (communityPredictions().length === 0) {
+          <div class="text-center py-8">
+            <p class="text-slate-500 text-sm">Nadie ha pronosticado este partido todavía.</p>
+          </div>
+        } @else {
+          <div class="space-y-3">
+            <!-- Grid Header -->
+            <div class="grid grid-cols-12 text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3">
+              <span class="col-span-6">Usuario</span>
+              <span class="col-span-3 text-center">Pronóstico</span>
+              <span class="col-span-3 text-right">Puntos</span>
+            </div>
+
+            <!-- List of predictions -->
+            <div class="space-y-1.5">
+              @for (pred of communityPredictions(); track pred.username) {
+                <div class="grid grid-cols-12 items-center bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl px-4 py-3 transition-colors">
+                  <span class="col-span-6 font-medium text-white text-sm truncate">
+                    {{ pred.username }}
+                  </span>
+                  <span class="col-span-3 font-mono text-center text-slate-300 text-sm">
+                    {{ pred.goles_local }} - {{ pred.goles_visitante }}
+                  </span>
+                  <span class="col-span-3 text-right">
+                    @if (selectedMatchForModal(); as match) {
+                      @if (hasResult(match)) {
+                        <span
+                          class="px-2 py-0.5 rounded-full text-xs font-bold"
+                          [ngClass]="{
+                            'bg-emerald-500/20 text-emerald-400': pred.puntos_ganados >= (match.es_partido_doble ? 6 : 3),
+                            'bg-accent-500/20 text-accent-400': pred.puntos_ganados > 0 && pred.puntos_ganados < (match.es_partido_doble ? 6 : 3),
+                            'bg-rose-500/20 text-rose-400': pred.puntos_ganados === 0
+                          }"
+                        >
+                          +{{ pred.puntos_ganados }} pts
+                        </span>
+                      } @else {
+                        <span class="text-slate-500 text-xs">Pendiente</span>
+                      }
+                    }
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+

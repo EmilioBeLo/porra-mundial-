@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -6,7 +7,13 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models import Match, Prediction, User
-from app.schemas import PredictionCreate, PredictionResponse, PredictionWithMatch, MatchResponse
+from app.schemas import (
+    PredictionCreate,
+    PredictionResponse,
+    PredictionWithMatch,
+    MatchResponse,
+    CommunityPrediction,
+)
 from app.services.validation_service import can_predict
 
 router = APIRouter(prefix="/api/predictions", tags=["predictions"])
@@ -110,6 +117,47 @@ def get_user_predictions(
             goles_visitante_pred=p.goles_visitante_pred,
             puntos_obtenidos=p.puntos_obtenidos,
             match=MatchResponse.model_validate(p.match),
+        )
+        for p in predictions
+    ]
+
+
+@router.get("/match/{match_id}", response_model=List[CommunityPrediction])
+def get_community_predictions(
+    match_id: int,
+    db: Session = Depends(get_db),
+) -> List[CommunityPrediction]:
+    """Get predictions of other users (excluding admins) for a match after kickoff."""
+    match = db.query(Match).filter(Match.id == match_id).first()
+    if not match:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Partido no encontrado",
+        )
+
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    if now_utc < match.fecha_hora:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Las predicciones de la comunidad solo están disponibles después del inicio del partido.",
+        )
+
+    predictions = (
+        db.query(Prediction)
+        .join(User)
+        .filter(
+            Prediction.match_id == match_id,
+            User.is_admin == False,
+        )
+        .all()
+    )
+
+    return [
+        CommunityPrediction(
+            username=p.user.nombre,
+            goles_local=p.goles_local_pred,
+            goles_visitante=p.goles_visitante_pred,
+            puntos_ganados=p.puntos_obtenidos,
         )
         for p in predictions
     ]

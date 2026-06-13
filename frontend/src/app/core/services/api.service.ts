@@ -42,6 +42,10 @@ export class ApiService {
     return this.http.get<Prediction[]>(`${this.baseUrl}/predictions/user/${userId}`);
   }
 
+  getCommunityPredictions(matchId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/predictions/match/${matchId}`);
+  }
+
   // --- Admin ---
   submitResult(matchId: number, goles_local: number, goles_visitante: number): Observable<{ match_id: number; predictions_updated: number; users_updated: number }> {
     return this.http.put<{ match_id: number; predictions_updated: number; users_updated: number }>(`${this.baseUrl}/admin/matches/${matchId}/result`, {

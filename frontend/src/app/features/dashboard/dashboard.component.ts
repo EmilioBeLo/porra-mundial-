@@ -33,6 +33,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly loading = signal(true);
   readonly matchesWithPredictions = signal<MatchWithPrediction[]>([]);
 
+  readonly showCommunityModal = signal(false);
+  readonly selectedMatchForModal = signal<Match | null>(null);
+  readonly communityPredictions = signal<any[]>([]);
+  readonly loadingCommunity = signal(false);
+  readonly communityError = signal<string | null>(null);
+
   readonly sortBy = signal<'date' | 'group'>('date');
   readonly selectedGroup = signal<string>('all');
   readonly teamQuery = signal<string>('');
@@ -201,5 +207,32 @@ export class DashboardComponent implements OnInit, OnDestroy {
         setTimeout(() => (item.saveError = null), 5000);
       },
     });
+  }
+
+  openCommunityPredictions(match: Match): void {
+    this.selectedMatchForModal.set(match);
+    this.showCommunityModal.set(true);
+    this.loadingCommunity.set(true);
+    this.communityError.set(null);
+    this.communityPredictions.set([]);
+
+    this.api.getCommunityPredictions(match.id).subscribe({
+      next: (preds) => {
+        this.communityPredictions.set(preds);
+        this.loadingCommunity.set(false);
+      },
+      error: (err) => {
+        this.communityError.set(err.error?.detail ?? 'Error al cargar los pronósticos de la comunidad');
+        this.loadingCommunity.set(false);
+      },
+    });
+  }
+
+  closeCommunityModal(): void {
+    this.showCommunityModal.set(false);
+    this.selectedMatchForModal.set(null);
+    this.communityPredictions.set([]);
+    this.communityError.set(null);
+    this.loadingCommunity.set(false);
   }
 }

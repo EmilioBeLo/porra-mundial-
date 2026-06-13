@@ -116,6 +116,14 @@ class PredictionWithMatch(PredictionResponse):
     match: MatchResponse
 
 
+class CommunityPrediction(BaseModel):
+    username: str
+    goles_local: int
+    goles_visitante: int
+    puntos_ganados: int
+
+
+
 # ──────────────────────────────────────────────
 # Admin schemas
 # ──────────────────────────────────────────────
