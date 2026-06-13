@@ -8,4 +8,5 @@ export interface User {
   assigned_team?: string | null;
   puntos_underdog?: number;
   puntos_predicciones?: number;
+  puntos_torneo?: number;
 }

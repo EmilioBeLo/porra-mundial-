@@ -258,6 +258,103 @@
     </div>
   </div>
 
+  <!-- Resultados Finales del Torneo -->
+  <div class="glass-card p-6 mb-8 animate-fade-in-up" id="admin-tournament-results">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="text-2xl">🏆</span>
+      <div>
+        <h2 class="font-display text-lg font-bold text-white">Resultados Finales del Torneo</h2>
+        <p class="text-slate-400 text-xs mt-0.5">Ingresa los ganadores reales para evaluar y calcular los puntos del torneo</p>
+      </div>
+    </div>
+
+    @if (tournamentResultsMsg()) {
+      <div
+        class="mb-4 p-3 rounded-lg text-sm animate-slide-down border"
+        [class]="tournamentResultsMsgType() === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'"
+        id="tournament-results-msg"
+      >
+        {{ tournamentResultsMsg() }}
+      </div>
+    }
+
+    <form (submit)="submitTournamentResults(); $event.preventDefault()" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- Campeon -->
+      <div>
+        <label for="admin-campeon-select" class="block text-sm font-medium text-slate-300 mb-1.5">Campeón Real</label>
+        <select
+          id="admin-campeon-select"
+          [value]="realCampeon()"
+          (change)="realCampeon.set($any($event.target).value)"
+          class="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent-500 cursor-pointer"
+        >
+          <option value="">Selecciona Campeón...</option>
+          @for (t of teams(); track t) {
+            <option [value]="t">{{ t }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Subcampeon -->
+      <div>
+        <label for="admin-subcampeon-select" class="block text-sm font-medium text-slate-300 mb-1.5">Subcampeón Real</label>
+        <select
+          id="admin-subcampeon-select"
+          [value]="realSubcampeon()"
+          (change)="realSubcampeon.set($any($event.target).value)"
+          class="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent-500 cursor-pointer"
+        >
+          <option value="">Selecciona Subcampeón...</option>
+          @for (t of teams(); track t) {
+            <option [value]="t">{{ t }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Goleador -->
+      <div>
+        <label for="admin-goleador-input" class="block text-sm font-medium text-slate-300 mb-1.5">Máximo Goleador Real</label>
+        <input
+          id="admin-goleador-input"
+          type="text"
+          [value]="realMaximoGoleador()"
+          (input)="realMaximoGoleador.set($any($event.target).value)"
+          class="input-field"
+          placeholder="Ej: Lionel Messi"
+        />
+      </div>
+
+      <!-- Asistente -->
+      <div>
+        <label for="admin-asistente-input" class="block text-sm font-medium text-slate-300 mb-1.5">Máximo Asistente Real</label>
+        <input
+          id="admin-asistente-input"
+          type="text"
+          [value]="realMaximoAsistente()"
+          (input)="realMaximoAsistente.set($any($event.target).value)"
+          class="input-field"
+          placeholder="Ej: Antoine Griezmann"
+        />
+      </div>
+
+      <div class="sm:col-span-2 pt-2">
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="savingTournamentResults()"
+          id="admin-tournament-results-submit-btn"
+        >
+          @if (savingTournamentResults()) {
+            <span class="animate-spin inline-block w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full mr-2"></span>
+            Guardando...
+          } @else {
+            Guardar Resultados y Recalcular
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+
   <!-- Sorteo de Selecciones Underdogs -->
   <div class="glass-card p-6 mb-8 animate-fade-in-up" id="draw-underdog-teams">
     <div class="flex items-center gap-3 mb-4">

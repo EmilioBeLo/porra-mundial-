@@ -3,7 +3,7 @@
 from typing import Tuple
 from sqlalchemy.orm import Session
 
-from app.models import Match, Prediction, User, SystemSetting
+from app.models import Match, Prediction, User, SystemSetting, TournamentPrediction
 
 
 def recalculate_match(db: Session, match: Match) -> None:
@@ -50,6 +50,9 @@ def recalculate_match(db: Session, match: Match) -> None:
                     perfect_count += 1
 
         user.puntos_totales = total_points + calculate_assigned_team_points(db, user)
+        active_league_id = SystemSetting.get_int(db, "active_league_id", 1)
+        if active_league_id == 1:
+            user.puntos_totales += calculate_tournament_points(db, user.id)
         user.aciertos_perfectos = perfect_count
 
 
@@ -75,6 +78,36 @@ def calculate_assigned_team_points(db: Session, user: User) -> int:
             points += match.goles_local_real + (match.goles_visitante_real // 3)
         elif user.assigned_team == match.equipo_visitante:
             points += match.goles_visitante_real + (match.goles_local_real // 3)
+    return points
+
+
+def calculate_tournament_points(db: Session, user_id: int) -> int:
+    """Calculate tournament prediction points for a user."""
+    prediction = db.query(TournamentPrediction).filter(TournamentPrediction.user_id == user_id).first()
+    if not prediction:
+        return 0
+
+    real_campeon = SystemSetting.get_str(db, "real_campeon", "")
+    real_subcampeon = SystemSetting.get_str(db, "real_subcampeon", "")
+    real_maximo_goleador = SystemSetting.get_str(db, "real_maximo_goleador", "")
+    real_maximo_asistente = SystemSetting.get_str(db, "real_maximo_asistente", "")
+
+    points = 0
+
+    def _match(pred: str, real: str) -> bool:
+        if not real or not pred:
+            return False
+        return pred.strip().lower() == real.strip().lower()
+
+    if _match(prediction.campeon, real_campeon):
+        points += 10
+    if _match(prediction.subcampeon, real_subcampeon):
+        points += 5
+    if _match(prediction.maximo_goleador, real_maximo_goleador):
+        points += 5
+    if _match(prediction.maximo_asistente, real_maximo_asistente):
+        points += 5
+
     return points
 
 
@@ -149,6 +182,7 @@ def recalculate_all_users_points(db: Session, league_id: int) -> None:
         user.puntos_totales = puntos_totales
         if league_id == 1:
             user.puntos_totales += calculate_assigned_team_points(db, user)
+            user.puntos_totales += calculate_tournament_points(db, user.id)
         user.aciertos_perfectos = perfectos
     db.commit()
 

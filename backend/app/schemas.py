@@ -40,6 +40,7 @@ class UserRanking(UserPublic):
     posicion: int
     puntos_underdog: int
     puntos_predicciones: int
+    puntos_torneo: int
 
 
 # ──────────────────────────────────────────────
@@ -159,4 +160,44 @@ class SettingResponse(BaseModel):
 
 class ActiveCompetitionUpdate(BaseModel):
     league_id: int
+
+
+# ──────────────────────────────────────────────
+# Tournament Prediction schemas
+# ──────────────────────────────────────────────
+
+class TournamentPredictionCreate(BaseModel):
+    campeon: str = Field(..., min_length=1, max_length=100)
+    subcampeon: str = Field(..., min_length=1, max_length=100)
+    maximo_goleador: str = Field(..., min_length=1, max_length=100)
+    maximo_asistente: str = Field(..., min_length=1, max_length=100)
+
+
+class TournamentPredictionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: int
+    campeon: str
+    subcampeon: str
+    maximo_goleador: str
+    maximo_asistente: str
+    created_at: datetime
+
+
+class CommunityTournamentPrediction(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    username: str
+    campeon: str
+    subcampeon: str
+    maximo_goleador: str
+    maximo_asistente: str
+
+
+class TournamentResultsUpdate(BaseModel):
+    real_campeon: str = Field(..., min_length=1, max_length=100)
+    real_subcampeon: str = Field(..., min_length=1, max_length=100)
+    real_maximo_goleador: str = Field(..., min_length=1, max_length=100)
+    real_maximo_asistente: str = Field(..., min_length=1, max_length=100)
 

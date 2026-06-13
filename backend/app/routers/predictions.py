@@ -6,13 +6,16 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.models import Match, Prediction, User
+from app.models import Match, Prediction, User, SystemSetting, TournamentPrediction
 from app.schemas import (
     PredictionCreate,
     PredictionResponse,
     PredictionWithMatch,
     MatchResponse,
     CommunityPrediction,
+    TournamentPredictionCreate,
+    TournamentPredictionResponse,
+    CommunityTournamentPrediction,
 )
 from app.services.validation_service import can_predict
 
@@ -161,3 +164,113 @@ def get_community_predictions(
         )
         for p in predictions
     ]
+
+
+# ──────────────────────────────────────────────
+# Tournament Predictions
+# ──────────────────────────────────────────────
+
+TOURNAMENT_DEADLINE = datetime(2026, 6, 13, 19, 0, 0)
+
+
+@router.get("/tournament", response_model=TournamentPredictionResponse)
+def get_my_tournament_prediction(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> TournamentPredictionResponse:
+    """Get current user's tournament prediction or empty values if none."""
+    pred = db.query(TournamentPrediction).filter(TournamentPrediction.user_id == current_user.id).first()
+    if not pred:
+        return TournamentPredictionResponse(
+            id=0,
+            user_id=current_user.id,
+            campeon="",
+            subcampeon="",
+            maximo_goleador="",
+            maximo_asistente="",
+            created_at=datetime.now(timezone.utc),
+        )
+    return TournamentPredictionResponse.model_validate(pred)
+
+
+@router.post("/tournament", response_model=TournamentPredictionResponse)
+def save_tournament_prediction(
+    body: TournamentPredictionCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> TournamentPredictionResponse:
+    """Save or update tournament prediction. Locked after deadline."""
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    if now_utc >= TOURNAMENT_DEADLINE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="El plazo para registrar/modificar predicciones del torneo ha cerrado",
+        )
+
+    existing = db.query(TournamentPrediction).filter(TournamentPrediction.user_id == current_user.id).first()
+    if existing:
+        existing.campeon = body.campeon
+        existing.subcampeon = body.subcampeon
+        existing.maximo_goleador = body.maximo_goleador
+        existing.maximo_asistente = body.maximo_asistente
+        existing.created_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(existing)
+        return TournamentPredictionResponse.model_validate(existing)
+
+    pred = TournamentPrediction(
+        user_id=current_user.id,
+        campeon=body.campeon,
+        subcampeon=body.subcampeon,
+        maximo_goleador=body.maximo_goleador,
+        maximo_asistente=body.maximo_asistente,
+    )
+    db.add(pred)
+    db.commit()
+    db.refresh(pred)
+    return TournamentPredictionResponse.model_validate(pred)
+
+
+@router.get("/tournament/community", response_model=List[CommunityTournamentPrediction])
+def get_community_tournament_predictions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> List[CommunityTournamentPrediction]:
+    """Get all community tournament predictions. Locked until deadline."""
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    if now_utc < TOURNAMENT_DEADLINE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Las predicciones del torneo de la comunidad solo se revelan después de la fecha límite",
+        )
+
+    predictions = (
+        db.query(TournamentPrediction)
+        .join(User)
+        .filter(User.is_admin == False)
+        .all()
+    )
+    return [
+        CommunityTournamentPrediction(
+            username=p.user.nombre,
+            campeon=p.campeon,
+            subcampeon=p.subcampeon,
+            maximo_goleador=p.maximo_goleador,
+            maximo_asistente=p.maximo_asistente,
+        )
+        for p in predictions
+    ]
+
+
+@router.get("/tournament/results")
+def get_tournament_results(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get the real/final results of the tournament."""
+    return {
+        "real_campeon": SystemSetting.get_str(db, "real_campeon", ""),
+        "real_subcampeon": SystemSetting.get_str(db, "real_subcampeon", ""),
+        "real_maximo_goleador": SystemSetting.get_str(db, "real_maximo_goleador", ""),
+        "real_maximo_asistente": SystemSetting.get_str(db, "real_maximo_asistente", ""),
+    }

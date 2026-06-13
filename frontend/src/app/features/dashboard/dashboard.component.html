@@ -25,10 +25,39 @@
     }
   </div>
 
+  <!-- Tab Selector -->
+  @if (auth.isLoggedIn()) {
+    <div class="flex justify-center gap-4 mb-8">
+      <button
+        (click)="activeTab.set('matches')"
+        [ngClass]="activeTab() === 'matches' 
+          ? 'bg-gradient-to-r from-accent-400 to-accent-600 text-slate-950 shadow-lg font-bold border-transparent' 
+          : 'bg-transparent text-white border border-white/20 hover:bg-white/5'"
+        class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border cursor-pointer"
+        type="button"
+        id="tab-matches-btn"
+      >
+        ⚽ Partidos
+      </button>
+      <button
+        (click)="activeTab.set('tournament')"
+        [ngClass]="activeTab() === 'tournament' 
+          ? 'bg-gradient-to-r from-accent-400 to-accent-600 text-slate-950 shadow-lg font-bold border-transparent' 
+          : 'bg-transparent text-white border border-white/20 hover:bg-white/5'"
+        class="px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 border cursor-pointer"
+        type="button"
+        id="tab-tournament-btn"
+      >
+        🏆 Favoritos/Torneo
+      </button>
+    </div>
+  }
+
   <!-- Loading -->
   @if (loading()) {
     <app-loading-spinner />
   } @else {
+    @if (activeTab() === 'matches') {
     <!-- Banner de Minijuego / Selección Underdog -->
     @if (assignedTeam()) {
       <div class="bg-gradient-to-r from-amber-500/10 via-orange-600/10 to-amber-500/10 border border-amber-500/20 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in" id="minigame-banner">
@@ -151,16 +180,326 @@
             </section>
           }
 
-          @if (groupedMatches().length === 0) {
-            <div class="text-center py-20 bg-slate-900/20 border border-white/5 rounded-2xl backdrop-blur-md animate-fade-in">
-              <div class="text-6xl mb-4">🏟️</div>
-              <h2 class="font-display text-xl font-bold text-white mb-2">No se encontraron partidos</h2>
-              <p class="text-slate-400">Prueba con otros filtros o buscando otro equipo.</p>
+      }
+    </div>
+    } @else if (activeTab() === 'tournament') {
+      <!-- Tournament Section -->
+      <div class="space-y-8 animate-fade-in">
+        @if (loadingTournament()) {
+          <div class="flex flex-col items-center justify-center py-12">
+            <div class="animate-spin rounded-full h-10 w-10 border-2 border-accent-500 border-t-transparent mb-4"></div>
+            <p class="text-slate-400 text-sm">Cargando datos del torneo...</p>
+          </div>
+        } @else {
+          <!-- Lockout alert -->
+          <div class="glass-card p-5 border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-orange-600/5 to-amber-500/5 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">🚨</span>
+              <div>
+                <h4 class="font-display font-bold text-white text-sm">Fecha Límite de Pronósticos del Torneo</h4>
+                <p class="text-slate-400 text-xs mt-0.5">Puedes registrar y modificar tus pronósticos hasta el 13 de Junio de 2026 a las 21:00 (Hora Madrid).</p>
+              </div>
+            </div>
+            <div class="px-3 py-1 rounded-full text-xs font-bold" [ngClass]="isTournamentDeadlinePassed() ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'">
+              {{ isTournamentDeadlinePassed() ? 'Cerrado / Bloqueado' : 'Abierto para Pronosticar' }}
+            </div>
+          </div>
+
+          @if (!isTournamentDeadlinePassed()) {
+            <!-- Before Deadline: Form -->
+            <div class="grid gap-6 md:grid-cols-3">
+              <div class="md:col-span-2 glass-card p-6">
+                <h3 class="font-display font-bold text-white text-lg mb-6 flex items-center gap-2">
+                  <span>🏆</span> Pronostica el Torneo
+                </h3>
+
+                <form (submit)="saveTournamentPrediction(); $event.preventDefault()" class="space-y-5">
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <!-- Campeon -->
+                    <div>
+                      <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2" for="campeon-select">Campeón</label>
+                      <select
+                        id="campeon-select"
+                        [(ngModel)]="campeon"
+                        name="campeon"
+                        class="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-accent-500/50 cursor-pointer"
+                      >
+                        <option value="">Selecciona Campeón...</option>
+                        @for (t of teams(); track t) {
+                          <option [value]="t">{{ t }}</option>
+                        }
+                      </select>
+                    </div>
+
+                    <!-- Subcampeon -->
+                    <div>
+                      <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2" for="subcampeon-select">Subcampeón</label>
+                      <select
+                        id="subcampeon-select"
+                        [(ngModel)]="subcampeon"
+                        name="subcampeon"
+                        class="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-accent-500/50 cursor-pointer"
+                      >
+                        <option value="">Selecciona Subcampeón...</option>
+                        @for (t of teams(); track t) {
+                          <option [value]="t">{{ t }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <!-- Maximo Goleador -->
+                    <div>
+                      <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2" for="goleador-input">Máximo Goleador</label>
+                      <input
+                        type="text"
+                        id="goleador-input"
+                        [(ngModel)]="maximoGoleador"
+                        name="maximoGoleador"
+                        placeholder="Ej. Kylian Mbappé"
+                        class="input-field"
+                      />
+                    </div>
+
+                    <!-- Maximo Asistente -->
+                    <div>
+                      <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2" for="asistente-input">Máximo Asistente</label>
+                      <input
+                        type="text"
+                        id="asistente-input"
+                        [(ngModel)]="maximoAsistente"
+                        name="maximoAsistente"
+                        placeholder="Ej. Kevin De Bruyne"
+                        class="input-field"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="pt-4 flex items-center justify-between gap-4">
+                    <button
+                      type="submit"
+                      [disabled]="isSavingTournament() || !campeon() || !subcampeon() || !maximoGoleador() || !maximoAsistente()"
+                      class="btn-primary w-full sm:w-auto"
+                      id="save-tournament-pred-btn"
+                    >
+                      @if (isSavingTournament()) {
+                        <span class="animate-spin inline-block w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full mr-2"></span>
+                        Guardando...
+                      } @else {
+                        Guardar Pronóstico
+                      }
+                    </button>
+
+                    @if (saveTournamentSuccess()) {
+                      <span class="text-emerald-400 text-sm font-semibold animate-slide-down">✅ Guardado correctamente</span>
+                    }
+                    @if (saveTournamentError(); as err) {
+                      <span class="text-rose-400 text-sm font-semibold animate-slide-down">❌ {{ err }}</span>
+                    }
+                  </div>
+                </form>
+              </div>
+
+              <!-- Rules sidebar -->
+              <div class="glass-card p-6 flex flex-col justify-between">
+                <div>
+                  <h3 class="font-display font-bold text-white text-lg mb-4 flex items-center gap-2">
+                    <span>📋</span> Sistema de Puntos
+                  </h3>
+                  <p class="text-slate-400 text-sm mb-4">Acierta los desenlaces finales del torneo para ganar puntos extra en la clasificación general:</p>
+                  <ul class="space-y-3 text-sm">
+                    <li class="flex items-center gap-2 text-slate-300">
+                      <span class="text-amber-500 font-bold w-12">+10 pts</span>
+                      <span>Acierto Campeón</span>
+                    </li>
+                    <li class="flex items-center gap-2 text-slate-300">
+                      <span class="text-amber-500 font-bold w-12">+5 pts</span>
+                      <span>Acierto Subcampeón</span>
+                    </li>
+                    <li class="flex items-center gap-2 text-slate-300">
+                      <span class="text-amber-500 font-bold w-12">+5 pts</span>
+                      <span>Acierto Máx. Goleador</span>
+                    </li>
+                    <li class="flex items-center gap-2 text-slate-300">
+                      <span class="text-amber-500 font-bold w-12">+5 pts</span>
+                      <span>Acierto Máx. Asistente</span>
+                    </li>
+                  </ul>
+                </div>
+                <div class="mt-6 pt-4 border-t border-white/5 text-xs text-slate-500">
+                  Las comparaciones se realizan de forma insensible a mayúsculas/minúsculas y espacios.
+                </div>
+              </div>
+            </div>
+          } @else {
+            <!-- After Deadline: Read-Only Comparison + Community predictions -->
+            <div class="grid gap-6 md:grid-cols-2">
+              <!-- My predictions -->
+              <div class="glass-card p-6">
+                <h3 class="font-display font-bold text-white text-lg mb-4 flex items-center gap-2">
+                  <span>🎯</span> Tus Predicciones del Torneo
+                </h3>
+                <div class="space-y-4">
+                  <!-- Campeon -->
+                  <div
+                    class="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5"
+                    [ngClass]="{'border-emerald-500/30 bg-emerald-500/5': hasTournamentResults() && isCorrect(campeon(), tournamentResults()?.real_campeon)}"
+                  >
+                    <div>
+                      <span class="text-xs text-slate-400 block font-medium">Campeón (+10 pts)</span>
+                      <span class="font-bold text-white">{{ campeon() || 'Sin pronóstico' }}</span>
+                    </div>
+                    @if (hasTournamentResults()) {
+                      <div class="text-right">
+                        <span class="text-xs text-slate-500 block">Real</span>
+                        <span class="text-sm font-bold" [ngClass]="isCorrect(campeon(), tournamentResults()?.real_campeon) ? 'text-emerald-400' : 'text-slate-300'">
+                          {{ tournamentResults()?.real_campeon || 'Pendiente' }}
+                        </span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Subcampeon -->
+                  <div
+                    class="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5"
+                    [ngClass]="{'border-emerald-500/30 bg-emerald-500/5': hasTournamentResults() && isCorrect(subcampeon(), tournamentResults()?.real_subcampeon)}"
+                  >
+                    <div>
+                      <span class="text-xs text-slate-400 block font-medium">Subcampeón (+5 pts)</span>
+                      <span class="font-bold text-white">{{ subcampeon() || 'Sin pronóstico' }}</span>
+                    </div>
+                    @if (hasTournamentResults()) {
+                      <div class="text-right">
+                        <span class="text-xs text-slate-500 block">Real</span>
+                        <span class="text-sm font-bold" [ngClass]="isCorrect(subcampeon(), tournamentResults()?.real_subcampeon) ? 'text-emerald-400' : 'text-slate-300'">
+                          {{ tournamentResults()?.real_subcampeon || 'Pendiente' }}
+                        </span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Goleador -->
+                  <div
+                    class="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5"
+                    [ngClass]="{'border-emerald-500/30 bg-emerald-500/5': hasTournamentResults() && isCorrect(maximoGoleador(), tournamentResults()?.real_maximo_goleador)}"
+                  >
+                    <div>
+                      <span class="text-xs text-slate-400 block font-medium">Máximo Goleador (+5 pts)</span>
+                      <span class="font-bold text-white">{{ maximoGoleador() || 'Sin pronóstico' }}</span>
+                    </div>
+                    @if (hasTournamentResults()) {
+                      <div class="text-right">
+                        <span class="text-xs text-slate-500 block">Real</span>
+                        <span class="text-sm font-bold" [ngClass]="isCorrect(maximoGoleador(), tournamentResults()?.real_maximo_goleador) ? 'text-emerald-400' : 'text-slate-300'">
+                          {{ tournamentResults()?.real_maximo_goleador || 'Pendiente' }}
+                        </span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Asistente -->
+                  <div
+                    class="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5"
+                    [ngClass]="{'border-emerald-500/30 bg-emerald-500/5': hasTournamentResults() && isCorrect(maximoAsistente(), tournamentResults()?.real_maximo_asistente)}"
+                  >
+                    <div>
+                      <span class="text-xs text-slate-400 block font-medium">Máximo Asistente (+5 pts)</span>
+                      <span class="font-bold text-white">{{ maximoAsistente() || 'Sin pronóstico' }}</span>
+                    </div>
+                    @if (hasTournamentResults()) {
+                      <div class="text-right">
+                        <span class="text-xs text-slate-500 block">Real</span>
+                        <span class="text-sm font-bold" [ngClass]="isCorrect(maximoAsistente(), tournamentResults()?.real_maximo_asistente) ? 'text-emerald-400' : 'text-slate-300'">
+                          {{ tournamentResults()?.real_maximo_asistente || 'Pendiente' }}
+                        </span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+
+              <!-- Rules & Score Summary -->
+              <div class="glass-card p-6 flex flex-col justify-between">
+                <div>
+                  <h3 class="font-display font-bold text-white text-lg mb-4 flex items-center gap-2">
+                    <span>🏆</span> Puntuación Acumulada
+                  </h3>
+                  <p class="text-slate-400 text-sm mb-4">Los puntos del torneo se sumarán a tu total una vez que el administrador ingrese los ganadores definitivos.</p>
+                  
+                  <div class="bg-white/5 p-4 rounded-xl border border-white/5 flex items-center justify-between">
+                    <div>
+                      <span class="text-xs text-slate-400 block font-medium">Tus puntos del torneo</span>
+                      <span class="text-2xl font-display font-extrabold text-amber-400">
+                        @if (hasTournamentResults()) {
+                          +{{
+                            (isCorrect(campeon(), tournamentResults()?.real_campeon) ? 10 : 0) +
+                            (isCorrect(subcampeon(), tournamentResults()?.real_subcampeon) ? 5 : 0) +
+                            (isCorrect(maximoGoleador(), tournamentResults()?.real_maximo_goleador) ? 5 : 0) +
+                            (isCorrect(maximoAsistente(), tournamentResults()?.real_maximo_asistente) ? 5 : 0)
+                          }} pts
+                        } @else {
+                          -- pts
+                        }
+                      </span>
+                    </div>
+                    <span class="text-3xl">🏅</span>
+                  </div>
+                </div>
+                
+                <div class="text-xs text-slate-500 pt-4 border-t border-white/5 mt-4">
+                  El total de puntos se recalcula automáticamente y afecta a la tabla de posiciones general.
+                </div>
+              </div>
+            </div>
+
+            <!-- Community Predictions comparison -->
+            <div class="glass-card p-6 mt-8">
+              <h3 class="font-display font-bold text-white text-lg mb-6 flex items-center gap-2">
+                <span>👥</span> Pronósticos de la Comunidad
+              </h3>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="border-b border-white/10 text-slate-400 text-xs uppercase tracking-wider">
+                      <th class="py-3.5 px-4 font-semibold">Usuario</th>
+                      <th class="py-3.5 px-4 font-semibold">Campeón</th>
+                      <th class="py-3.5 px-4 font-semibold">Subcampeón</th>
+                      <th class="py-3.5 px-4 font-semibold">Máx. Goleador</th>
+                      <th class="py-3.5 px-4 font-semibold">Máx. Asistente</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-sm divide-y divide-white/5">
+                    @for (cp of communityTournamentPredictions(); track cp.username) {
+                      <tr class="hover:bg-white/5 transition-colors">
+                        <td class="py-3.5 px-4 font-bold text-white">{{ cp.username }}</td>
+                        <td class="py-3.5 px-4" [ngClass]="{'text-emerald-400 font-extrabold': hasTournamentResults() && isCorrect(cp.campeon, tournamentResults()?.real_campeon)}">
+                          {{ cp.campeon }}
+                        </td>
+                        <td class="py-3.5 px-4" [ngClass]="{'text-emerald-400 font-extrabold': hasTournamentResults() && isCorrect(cp.subcampeon, tournamentResults()?.real_subcampeon)}">
+                          {{ cp.subcampeon }}
+                        </td>
+                        <td class="py-3.5 px-4" [ngClass]="{'text-emerald-400 font-extrabold': hasTournamentResults() && isCorrect(cp.maximo_goleador, tournamentResults()?.real_maximo_goleador)}">
+                          {{ cp.maximo_goleador }}
+                        </td>
+                        <td class="py-3.5 px-4" [ngClass]="{'text-emerald-400 font-extrabold': hasTournamentResults() && isCorrect(cp.maximo_asistente, tournamentResults()?.real_maximo_asistente)}">
+                          {{ cp.maximo_asistente }}
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="5" class="text-center py-6 text-slate-500">Ningún usuario ha registrado predicciones del torneo.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
             </div>
           }
         }
-      }
-    </div>
+      </div>
+    }
   }
 </div>
 

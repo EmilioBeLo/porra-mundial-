@@ -5,6 +5,12 @@ import { environment } from '../../../environments/environment';
 import { User } from '../models/user.model';
 import { Match } from '../models/match.model';
 import { Prediction, PredictionCreate } from '../models/prediction.model';
+import {
+  TournamentPrediction,
+  TournamentPredictionCreate,
+  CommunityTournamentPrediction,
+  TournamentResults
+} from '../models/tournament-prediction.model';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -81,5 +87,26 @@ export class ApiService {
 
   setActiveCompetition(leagueId: number): Observable<{ league_id: number; name: string; season: number }> {
     return this.http.put<{ league_id: number; name: string; season: number }>(`${this.baseUrl}/settings/active`, { league_id: leagueId });
+  }
+
+  // --- Tournament Predictions ---
+  getTournamentPrediction(): Observable<TournamentPrediction> {
+    return this.http.get<TournamentPrediction>(`${this.baseUrl}/predictions/tournament`);
+  }
+
+  saveTournamentPrediction(pred: TournamentPredictionCreate): Observable<TournamentPrediction> {
+    return this.http.post<TournamentPrediction>(`${this.baseUrl}/predictions/tournament`, pred);
+  }
+
+  getCommunityTournamentPredictions(): Observable<CommunityTournamentPrediction[]> {
+    return this.http.get<CommunityTournamentPrediction[]>(`${this.baseUrl}/predictions/tournament/community`);
+  }
+
+  getTournamentResults(): Observable<TournamentResults> {
+    return this.http.get<TournamentResults>(`${this.baseUrl}/predictions/tournament/results`);
+  }
+
+  saveTournamentResults(results: TournamentResults): Observable<{ status: string; message: string }> {
+    return this.http.put<{ status: string; message: string }>(`${this.baseUrl}/admin/tournament/results`, results);
   }
 }

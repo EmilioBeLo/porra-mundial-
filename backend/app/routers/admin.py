@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import require_admin
-from app.models import Match, Prediction, User
-from app.schemas import MatchCreate, MatchResponse, MatchResultUpdate, RecalculationResult
+from app.models import Match, Prediction, User, SystemSetting
+from app.schemas import MatchCreate, MatchResponse, MatchResultUpdate, RecalculationResult, TournamentResultsUpdate
 from app.services.api_football_service import fetch_and_sync_fixtures, sync_match_results
 from app.services.scoring_service import (
     calculate_points,
@@ -156,3 +156,32 @@ def draw_teams(
     db.commit()
 
     return {"status": "success", "assignments": assignments}
+
+
+@router.put("/tournament/results", status_code=status.HTTP_200_OK)
+def update_tournament_results(
+    body: TournamentResultsUpdate,
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Update real tournament results and recalculate points for all users."""
+    for key, val in [
+        ("real_campeon", body.real_campeon),
+        ("real_subcampeon", body.real_subcampeon),
+        ("real_maximo_goleador", body.real_maximo_goleador),
+        ("real_maximo_asistente", body.real_maximo_asistente),
+    ]:
+        setting = db.query(SystemSetting).filter(SystemSetting.key == key).first()
+        if setting:
+            setting.value = val
+        else:
+            setting = SystemSetting(key=key, value=val)
+            db.add(setting)
+
+    db.flush()
+
+    # Recalculate all users' points for World Cup (league_id = 1)
+    recalculate_all_users_points(db, league_id=1)
+    db.commit()
+
+    return {"status": "success", "message": "Resultados del torneo actualizados y puntuación recalculada"}

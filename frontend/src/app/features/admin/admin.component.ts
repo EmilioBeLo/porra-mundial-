@@ -51,6 +51,16 @@ export class AdminComponent implements OnInit {
   readonly competitionMsg = signal<string | null>(null);
   readonly competitionMsgType = signal<'success' | 'error' | null>(null);
 
+  // Tournament Results States
+  readonly realCampeon = signal('');
+  readonly realSubcampeon = signal('');
+  readonly realMaximoGoleador = signal('');
+  readonly realMaximoAsistente = signal('');
+  readonly savingTournamentResults = signal(false);
+  readonly tournamentResultsMsg = signal<string | null>(null);
+  readonly tournamentResultsMsgType = signal<'success' | 'error' | null>(null);
+  readonly teams = signal<string[]>([]);
+
   // Create match form
   newMatch = {
     equipo_local: '',
@@ -68,6 +78,7 @@ export class AdminComponent implements OnInit {
   ngOnInit(): void {
     this.loadMatches();
     this.loadCompetitions();
+    this.loadTournamentResults();
   }
 
   private loadCompetitions(): void {
@@ -127,6 +138,13 @@ export class AdminComponent implements OnInit {
 
         const fasesSet = new Set(matches.map((m) => m.grupo_o_fase).filter(Boolean));
         this.fases.set(Array.from(fasesSet).sort());
+
+        const teamNames = new Set<string>();
+        for (const m of matches) {
+          if (m.equipo_local) teamNames.add(m.equipo_local);
+          if (m.equipo_visitante) teamNames.add(m.equipo_visitante);
+        }
+        this.teams.set(Array.from(teamNames).sort());
 
         this.loading.set(false);
       },
@@ -309,6 +327,51 @@ export class AdminComponent implements OnInit {
           this.drawMsgType.set(null);
         }, 5000);
       }
+    });
+  submitTournamentResults(): void {
+    this.savingTournamentResults.set(true);
+    this.tournamentResultsMsg.set(null);
+
+    const payload = {
+      real_campeon: this.realCampeon().trim(),
+      real_subcampeon: this.realSubcampeon().trim(),
+      real_maximo_goleador: this.realMaximoGoleador().trim(),
+      real_maximo_asistente: this.realMaximoAsistente().trim(),
+    };
+
+    this.api.saveTournamentResults(payload).subscribe({
+      next: (res) => {
+        this.savingTournamentResults.set(false);
+        this.tournamentResultsMsg.set('Resultados del torneo guardados y puntos recalculados exitosamente.');
+        this.tournamentResultsMsgType.set('success');
+        setTimeout(() => {
+          this.tournamentResultsMsg.set(null);
+          this.tournamentResultsMsgType.set(null);
+        }, 5000);
+      },
+      error: (err) => {
+        this.savingTournamentResults.set(false);
+        this.tournamentResultsMsg.set(err.error?.detail ?? 'Error al guardar los resultados del torneo');
+        this.tournamentResultsMsgType.set('error');
+        setTimeout(() => {
+          this.tournamentResultsMsg.set(null);
+          this.tournamentResultsMsgType.set(null);
+        }, 5000);
+      }
+    });
+  }
+
+  private loadTournamentResults(): void {
+    this.api.getTournamentResults().subscribe({
+      next: (res) => {
+        if (res) {
+          this.realCampeon.set(res.real_campeon || '');
+          this.realSubcampeon.set(res.real_subcampeon || '');
+          this.realMaximoGoleador.set(res.real_maximo_goleador || '');
+          this.realMaximoAsistente.set(res.real_maximo_asistente || '');
+        }
+      },
+      error: (err) => console.error('Error loading tournament results in admin component', err)
     });
   }
 }

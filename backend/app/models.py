@@ -91,3 +91,18 @@ class Prediction(Base):
 
     user = relationship("User", back_populates="predictions")
     match = relationship("Match", back_populates="predictions")
+
+
+class TournamentPrediction(Base):
+    __tablename__ = "tournament_predictions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False, index=True)
+    campeon = Column(String(100), nullable=False)
+    subcampeon = Column(String(100), nullable=False)
+    maximo_goleador = Column(String(100), nullable=False)
+    maximo_asistente = Column(String(100), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", backref="tournament_prediction")
+

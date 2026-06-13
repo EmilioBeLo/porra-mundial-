@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 from app.schemas import UserRanking
-from app.services.scoring_service import calculate_assigned_team_points
+from app.services.scoring_service import calculate_assigned_team_points, calculate_tournament_points
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -25,7 +25,8 @@ def get_ranking(db: Session = Depends(get_db)) -> List[UserRanking]:
     ranking: List[UserRanking] = []
     for idx, user in enumerate(users, start=1):
         puntos_underdog = calculate_assigned_team_points(db, user)
-        puntos_predicciones = user.puntos_totales - puntos_underdog
+        puntos_torneo = calculate_tournament_points(db, user.id)
+        puntos_predicciones = user.puntos_totales - puntos_underdog - puntos_torneo
         ranking.append(
             UserRanking(
                 id=user.id,
@@ -37,7 +38,9 @@ def get_ranking(db: Session = Depends(get_db)) -> List[UserRanking]:
                 posicion=idx,
                 puntos_underdog=puntos_underdog,
                 puntos_predicciones=puntos_predicciones,
+                puntos_torneo=puntos_torneo,
             )
         )
 
     return ranking
+
