@@ -283,7 +283,7 @@
 </ng-template>
 
 <!-- Glassmorphic Modal -->
-@if (showCommunityModal()) {
+@if (showCommunityModal() && selectedMatchForModal(); as match) {
   <div
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-opacity duration-300"
     (click)="closeCommunityModal()"
@@ -298,11 +298,9 @@
       <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between">
         <div>
           <h3 class="font-display font-bold text-white text-lg">Pronósticos de la Comunidad</h3>
-          @if (selectedMatchForModal(); as match) {
-            <p class="text-xs text-slate-400 mt-0.5">
-              {{ match.equipo_local }} vs {{ match.equipo_visitante }}
-            </p>
-          }
+          <p class="text-xs text-slate-400 mt-0.5">
+            {{ match.equipo_local }} vs {{ match.equipo_visitante }}
+          </p>
         </div>
         <button
           (click)="closeCommunityModal()"
@@ -328,9 +326,7 @@
           <div class="text-center py-6">
             <p class="text-rose-400 text-sm mb-3">⚠️ {{ communityError() }}</p>
             <button
-              @if (selectedMatchForModal(); as match) {
-                (click)="openCommunityPredictions(match)"
-              }
+              (click)="openCommunityPredictions(match)"
               class="btn-primary !py-1.5 !px-3 !text-xs"
               type="button"
             >
@@ -361,21 +357,19 @@
                     {{ pred.goles_local }} - {{ pred.goles_visitante }}
                   </span>
                   <span class="col-span-3 text-right">
-                    @if (selectedMatchForModal(); as match) {
-                      @if (hasResult(match)) {
-                        <span
-                          class="px-2 py-0.5 rounded-full text-xs font-bold"
-                          [ngClass]="{
-                            'bg-emerald-500/20 text-emerald-400': pred.puntos_ganados >= (match.es_partido_doble ? 6 : 3),
-                            'bg-accent-500/20 text-accent-400': pred.puntos_ganados > 0 && pred.puntos_ganados < (match.es_partido_doble ? 6 : 3),
-                            'bg-rose-500/20 text-rose-400': pred.puntos_ganados === 0
-                          }"
-                        >
-                          +{{ pred.puntos_ganados }} pts
-                        </span>
-                      } @else {
-                        <span class="text-slate-500 text-xs">Pendiente</span>
-                      }
+                    @if (hasResult(match)) {
+                      <span
+                        class="px-2 py-0.5 rounded-full text-xs font-bold"
+                        [ngClass]="{
+                          'bg-emerald-500/20 text-emerald-400': pred.puntos_ganados >= (match.es_partido_doble ? 6 : 3),
+                          'bg-accent-500/20 text-accent-400': pred.puntos_ganados > 0 && pred.puntos_ganados < (match.es_partido_doble ? 6 : 3),
+                          'bg-rose-500/20 text-rose-400': pred.puntos_ganados === 0
+                        }"
+                      >
+                        +{{ pred.puntos_ganados }} pts
+                      </span>
+                    } @else {
+                      <span class="text-slate-500 text-xs">Pendiente</span>
                     }
                   </span>
                 </div>
