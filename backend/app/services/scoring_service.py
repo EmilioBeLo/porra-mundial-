@@ -20,6 +20,16 @@ def recalculate_match(db: Session, match: Match) -> None:
         prediction.puntos_obtenidos = points
         affected_user_ids.add(prediction.user_id)
 
+    # Also include users whose assigned underdog team is playing in this match
+    underdog_users = db.query(User).filter(
+        (User.assigned_team == match.equipo_local) | (User.assigned_team == match.equipo_visitante)
+    ).all()
+    for uu in underdog_users:
+        affected_user_ids.add(uu.id)
+
+    # Flush pending changes (like match scores) so calculate_assigned_team_points can query them
+    db.flush()
+
     for user_id in affected_user_ids:
         user = db.query(User).filter(User.id == user_id).first()
         if not user:

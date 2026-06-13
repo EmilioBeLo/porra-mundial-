@@ -243,3 +243,46 @@ def test_minigame_scoring_only_league_1(db_session):
 
     points = calculate_assigned_team_points(db_session, user)
     assert points == 0
+
+
+def test_recalculate_match_without_prediction_updates_minigame_points(db_session):
+    # Setup user with assigned team "Bosnia and Herzegovina" and no predictions
+    user = User(nombre="BosniaFan", password_hash="hash", is_admin=False, assigned_team="Bosnia and Herzegovina")
+    db_session.add(user)
+    
+    # Active league needs to be 1. Ensure we restore active_league_id to 1.
+    active_league_setting = db_session.query(SystemSetting).filter(SystemSetting.key == "active_league_id").first()
+    if active_league_setting:
+        active_league_setting.value = "1"
+    else:
+        active_league_setting = SystemSetting(key="active_league_id", value="1")
+        db_session.add(active_league_setting)
+    
+    match = Match(
+        equipo_local="Bosnia and Herzegovina",
+        equipo_visitante="Germany",
+        fecha_hora=datetime.now(),
+        grupo_o_fase="Group Stage",
+        goles_local_real=None,
+        goles_visitante_real=None,
+        league_id=1
+    )
+    db_session.add(match)
+    db_session.commit()
+
+    # Confirm user points are initially 0
+    assert user.puntos_totales == 0
+
+    # Update match result using the scoring service function recalculate_match
+    match.goles_local_real = 3
+    match.goles_visitante_real = 3
+    
+    from app.services.scoring_service import recalculate_match
+    recalculate_match(db_session, match)
+    db_session.commit()
+
+    # User did not have prediction, but because they have Bosnia assigned,
+    # they should get: 3 goals scored + (3 // 3) goals conceded = 4 points.
+    db_session.refresh(user)
+    assert user.puntos_totales == 4
+
