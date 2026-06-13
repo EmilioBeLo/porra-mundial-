@@ -328,6 +328,8 @@ export class AdminComponent implements OnInit {
         }, 5000);
       }
     });
+  }
+
   submitTournamentResults(): void {
     this.savingTournamentResults.set(true);
     this.tournamentResultsMsg.set(null);
