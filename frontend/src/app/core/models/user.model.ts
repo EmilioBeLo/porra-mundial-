@@ -5,4 +5,5 @@ export interface User {
   aciertos_perfectos: number;
   is_admin: boolean;
   posicion?: number;
+  assigned_team?: string | null;
 }

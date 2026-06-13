@@ -29,6 +29,22 @@
   @if (loading()) {
     <app-loading-spinner />
   } @else {
+    <!-- Banner de Minijuego / Selección Underdog -->
+    @if (assignedTeam()) {
+      <div class="bg-gradient-to-r from-amber-500/10 via-orange-600/10 to-amber-500/10 border border-amber-500/20 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in" id="minigame-banner">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl animate-bounce">🎲</span>
+          <div>
+            <h4 class="font-display font-bold text-white text-sm">Tu selección del minijuego: <span class="text-amber-400 font-extrabold">{{ assignedTeam() }}</span></h4>
+            <p class="text-slate-400 text-xs mt-0.5">Sumas +1 punto por gol que anoten, y puntos por goles concedidos (en bloques de 3 goles en contra: +1 pto si conceden 3 goles en un partido, etc.)</p>
+          </div>
+        </div>
+        <div class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          Minijuego Activo
+        </div>
+      </div>
+    }
+
     <!-- Premium Glassmorphic Filter Bar -->
     <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between animate-fade-in">
       <!-- Sort Toggle -->

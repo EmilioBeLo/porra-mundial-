@@ -29,6 +29,7 @@ def get_ranking(db: Session = Depends(get_db)) -> List[UserRanking]:
                 nombre=user.nombre,
                 puntos_totales=user.puntos_totales,
                 aciertos_perfectos=user.aciertos_perfectos,
+                assigned_team=user.assigned_team,
                 created_at=user.created_at,
                 posicion=idx,
             )

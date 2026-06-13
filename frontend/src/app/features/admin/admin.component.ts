@@ -34,6 +34,13 @@ export class AdminComponent implements OnInit {
   readonly syncingResults = signal(false);
   readonly syncResultsMsg = signal<string | null>(null);
   readonly syncResultsMsgType = signal<'success' | 'error' | null>(null);
+  
+  // Draw Teams States
+  readonly drawingTeams = signal(false);
+  readonly drawMsg = signal<string | null>(null);
+  readonly drawMsgType = signal<'success' | 'error' | null>(null);
+  readonly showConfirmDrawModal = signal(false);
+
   readonly filterFase = signal('');
   readonly showCreateForm = signal(false);
 
@@ -267,6 +274,41 @@ export class AdminComponent implements OnInit {
           this.syncResultsMsgType.set(null);
         }, 5000);
       },
+    });
+  }
+
+  confirmDraw(): void {
+    this.showConfirmDrawModal.set(true);
+  }
+
+  closeDrawModal(): void {
+    this.showConfirmDrawModal.set(false);
+  }
+
+  executeDraw(): void {
+    this.drawingTeams.set(true);
+    this.drawMsg.set(null);
+    this.showConfirmDrawModal.set(false);
+
+    this.api.drawTeams().subscribe({
+      next: () => {
+        this.drawingTeams.set(false);
+        this.drawMsg.set('Sorteo completado con éxito. ¡Se asignaron las selecciones!');
+        this.drawMsgType.set('success');
+        setTimeout(() => {
+          this.drawMsg.set(null);
+          this.drawMsgType.set(null);
+        }, 5000);
+      },
+      error: (err) => {
+        this.drawingTeams.set(false);
+        this.drawMsg.set(err.error?.detail ?? 'Error al realizar el sorteo');
+        this.drawMsgType.set('error');
+        setTimeout(() => {
+          this.drawMsg.set(null);
+          this.drawMsgType.set(null);
+        }, 5000);
+      }
     });
   }
 }

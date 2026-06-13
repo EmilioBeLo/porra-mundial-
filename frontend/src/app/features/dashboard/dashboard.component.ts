@@ -32,6 +32,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   readonly loading = signal(true);
   readonly matchesWithPredictions = signal<MatchWithPrediction[]>([]);
+  readonly assignedTeam = signal<string | null>(null);
 
   readonly showCommunityModal = signal(false);
   readonly selectedMatchForModal = signal<Match | null>(null);
@@ -118,10 +119,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.api.getMyPredictions().subscribe({
             next: (predictions) => {
               this.buildMatchList(matches, predictions);
+              this.loadAssignedTeam();
               this.loading.set(false);
             },
             error: () => {
               this.buildMatchList(matches, []);
+              this.loadAssignedTeam();
               this.loading.set(false);
             },
           });
@@ -133,6 +136,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
       error: () => {
         this.loading.set(false);
       },
+    });
+  }
+
+  private loadAssignedTeam(): void {
+    const currentUser = this.auth.currentUser();
+    if (!currentUser) return;
+    
+    this.api.getUsers().subscribe({
+      next: (users) => {
+        const matchedUser = users.find(u => u.id === currentUser.id);
+        if (matchedUser && matchedUser.assigned_team) {
+          this.assignedTeam.set(matchedUser.assigned_team);
+        } else {
+          this.assignedTeam.set(null);
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching users for minigame assigned team', err);
+        this.assignedTeam.set(null);
+      }
     });
   }
 

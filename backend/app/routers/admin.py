@@ -1,3 +1,4 @@
+import random
 from typing import Set
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,7 +9,11 @@ from app.dependencies import require_admin
 from app.models import Match, Prediction, User
 from app.schemas import MatchCreate, MatchResponse, MatchResultUpdate, RecalculationResult
 from app.services.api_football_service import fetch_and_sync_fixtures, sync_match_results
-from app.services.scoring_service import calculate_points, recalculate_match
+from app.services.scoring_service import (
+    calculate_points,
+    recalculate_all_users_points,
+    recalculate_match,
+)
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -93,3 +98,47 @@ def sync_results(
 ) -> dict:
     """Fetch and sync match results from API-Football. Requires admin."""
     return sync_match_results(db)
+
+
+UNDERDOG_TEAMS = [
+    "New Zealand",
+    "Haiti",
+    "Curaçao",
+    "Ghana",
+    "Cape Verde",
+    "Bosnia and Herzegovina",
+    "Jordan",
+    "Saudi Arabia",
+    "South Africa",
+    "Iraq",
+]
+
+
+@router.post("/draw-teams", status_code=status.HTTP_200_OK)
+def draw_teams(
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    """
+    Draw/assign one of the worst 10 teams to all active non-admin users.
+    Triggers recalculation of all users' points afterwards.
+    """
+    users = db.query(User).filter(User.is_admin == False).all()
+    if not users:
+        return {"status": "success", "assignments": {}}
+
+    teams = list(UNDERDOG_TEAMS)
+    random.shuffle(teams)
+
+    assignments = {}
+    for i, user in enumerate(users):
+        assigned = teams[i % len(teams)]
+        user.assigned_team = assigned
+        assignments[user.nombre] = assigned
+
+    # Trigger points recalculation for league_id = 1 (World Cup)
+    recalculate_all_users_points(db, league_id=1)
+
+    db.commit()
+
+    return {"status": "success", "assignments": assignments}

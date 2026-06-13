@@ -87,6 +87,9 @@
                     <span class="text-xs text-slate-500 ml-1">(tú)</span>
                   }
                 </span>
+                @if (user.assigned_team) {
+                  <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">{{ user.assigned_team }}</span>
+                }
               </td>
               <td class="px-6 py-4 text-right">
                 <span class="font-display font-bold text-accent-400">{{ user.puntos_totales }}</span>
@@ -120,6 +123,9 @@
               {{ user.nombre }}
               @if (user.id === currentUserId()) {
                 <span class="text-xs text-slate-500">(tú)</span>
+              }
+              @if (user.assigned_team) {
+                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">{{ user.assigned_team }}</span>
               }
             </p>
             <p class="text-xs text-slate-400">{{ user.aciertos_perfectos }} aciertos perfectos</p>

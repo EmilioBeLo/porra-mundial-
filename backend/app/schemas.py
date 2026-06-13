@@ -32,6 +32,7 @@ class UserPublic(BaseModel):
     nombre: str
     puntos_totales: int
     aciertos_perfectos: int
+    assigned_team: Optional[str] = None
     created_at: datetime
 
 

@@ -23,6 +23,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     puntos_totales = Column(Integer, default=0)
     aciertos_perfectos = Column(Integer, default=0)
+    assigned_team = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     predictions = relationship("Prediction", back_populates="user", lazy="selectin")

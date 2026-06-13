@@ -66,6 +66,10 @@ export class ApiService {
     return this.http.post<{ status: string; updated_matches_count: number }>(`${this.baseUrl}/admin/sync/results`, {});
   }
 
+  drawTeams(): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/admin/draw-teams`, {});
+  }
+
   // --- Settings / Competitions ---
   getCompetitions(): Observable<{ league_id: number; name: string; season: number }[]> {
     return this.http.get<{ league_id: number; name: string; season: number }[]>(`${this.baseUrl}/settings/competitions`);

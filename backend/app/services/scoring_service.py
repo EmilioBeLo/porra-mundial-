@@ -3,7 +3,7 @@
 from typing import Tuple
 from sqlalchemy.orm import Session
 
-from app.models import Match, Prediction, User
+from app.models import Match, Prediction, User, SystemSetting
 
 
 def recalculate_match(db: Session, match: Match) -> None:
@@ -39,8 +39,33 @@ def recalculate_match(db: Session, match: Match) -> None:
                 if is_perfect:
                     perfect_count += 1
 
-        user.puntos_totales = total_points
+        user.puntos_totales = total_points + calculate_assigned_team_points(db, user)
         user.aciertos_perfectos = perfect_count
+
+
+def calculate_assigned_team_points(db: Session, user: User) -> int:
+    """Calculate minigame points for the user's assigned team in World Cup (league_id == 1)."""
+    active_league_id = SystemSetting.get_int(db, "active_league_id", 1)
+    if not user.assigned_team or active_league_id != 1:
+        return 0
+
+    matches = (
+        db.query(Match)
+        .filter(
+            Match.league_id == 1,
+            Match.goles_local_real.isnot(None),
+            Match.goles_visitante_real.isnot(None),
+        )
+        .all()
+    )
+
+    points = 0
+    for match in matches:
+        if user.assigned_team == match.equipo_local:
+            points += match.goles_local_real + (match.goles_visitante_real // 3)
+        elif user.assigned_team == match.equipo_visitante:
+            points += match.goles_visitante_real + (match.goles_local_real // 3)
+    return points
 
 
 def calculate_points(prediction: Prediction, match: Match) -> Tuple[int, bool]:
@@ -112,6 +137,8 @@ def recalculate_all_users_points(db: Session, league_id: int) -> None:
                 perfectos += 1
 
         user.puntos_totales = puntos_totales
+        if league_id == 1:
+            user.puntos_totales += calculate_assigned_team_points(db, user)
         user.aciertos_perfectos = perfectos
     db.commit()
 
