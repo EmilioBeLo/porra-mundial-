@@ -5,11 +5,11 @@ import { Component } from '@angular/core';
   standalone: true,
   template: `
     <div class="flex items-center justify-center py-12" id="loading-spinner">
-      <div class="relative w-16 h-16 flex items-center justify-center">
+      <div class="relative w-28 h-28 flex items-center justify-center">
         <!-- Image spinner -->
         <img 
           src="amigo.png" 
-          class="w-16 h-16 rounded-full object-cover animate-spin shadow-lg border-2 border-amber-500/20" 
+          class="w-28 h-28 rounded-full object-cover animate-spin shadow-lg border-2 border-amber-500/20" 
           alt="Cargando..."
           #friendImg
           (error)="friendImg.style.display='none'; fallbackSpinner.style.display='block'"
