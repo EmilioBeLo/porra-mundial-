@@ -82,6 +82,69 @@
     }
   </div>
 
+  <!-- Bloqueo de Predicciones del Torneo -->
+  <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-8 animate-fade-in-up" id="tournament-lock-settings">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">🔒</span>
+        <div>
+          <h2 class="font-display text-lg font-bold text-white">Bloqueo de Predicciones del Torneo</h2>
+          <p class="text-slate-400 text-xs mt-0.5">Controla si los usuarios pueden registrar o modificar sus predicciones del torneo</p>
+        </div>
+      </div>
+      
+      <div class="w-full md:w-auto flex items-center gap-4">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-semibold uppercase tracking-wider" [class]="isTournamentLocked() ? 'text-rose-400' : 'text-emerald-400'">
+            {{ isTournamentLocked() ? 'Bloqueado' : 'Desbloqueado' }}
+          </span>
+          <button
+            (click)="toggleLock()"
+            [disabled]="togglingLock()"
+            type="button"
+            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+            [class]="isTournamentLocked() ? 'bg-rose-500' : 'bg-slate-700'"
+            id="tournament-lock-toggle-btn"
+          >
+            <span class="sr-only">Toggle lock</span>
+            <span
+              class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+              [class]="isTournamentLocked() ? 'translate-x-5' : 'translate-x-0'"
+            ></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert / Status Subtext -->
+    <div class="mt-4 pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="text-xs text-slate-400">
+        Estado actual: 
+        <strong [class]="isTournamentLocked() ? 'text-rose-400' : 'text-emerald-400'">
+          {{ isTournamentLocked() ? 'Los usuarios NO pueden modificar sus predicciones.' : 'Los usuarios PUEDEN modificar sus predicciones.' }}
+        </strong>
+      </div>
+
+      @if (togglingLock()) {
+        <div class="text-xs text-accent-400 flex items-center gap-2">
+          <span class="animate-spin inline-block w-3 h-3 border-2 border-accent-400 border-t-transparent rounded-full"></span>
+          Actualizando estado de bloqueo...
+        </div>
+      }
+    </div>
+
+    <!-- Success/Error toast messages for lock toggle -->
+    @if (lockMsg()) {
+      <div
+        class="mt-4 p-3 rounded-lg text-sm animate-slide-down border"
+        [class]="lockMsgType() === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'"
+        id="tournament-lock-msg"
+      >
+        {{ lockMsg() }}
+      </div>
+    }
+  </div>
+
   <!-- Create Match Form -->
   @if (showCreateForm()) {
     <div class="glass-card p-6 mb-8 animate-slide-down" id="create-match-form">

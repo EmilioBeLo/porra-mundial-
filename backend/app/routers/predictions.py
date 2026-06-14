@@ -170,9 +170,6 @@ def get_community_predictions(
 # Tournament Predictions
 # ──────────────────────────────────────────────
 
-TOURNAMENT_DEADLINE = datetime(2026, 6, 13, 19, 0, 0)
-
-
 @router.get("/tournament", response_model=TournamentPredictionResponse)
 def get_my_tournament_prediction(
     current_user: User = Depends(get_current_user),
@@ -200,8 +197,8 @@ def save_tournament_prediction(
     db: Session = Depends(get_db),
 ) -> TournamentPredictionResponse:
     """Save or update tournament prediction. Locked after deadline."""
-    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
-    if now_utc >= TOURNAMENT_DEADLINE:
+    locked = SystemSetting.get_str(db, "tournament_predictions_locked", "true")
+    if locked.lower() == "true":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="El plazo para registrar/modificar predicciones del torneo ha cerrado",
@@ -237,8 +234,8 @@ def get_community_tournament_predictions(
     db: Session = Depends(get_db),
 ) -> List[CommunityTournamentPrediction]:
     """Get all community tournament predictions. Locked until deadline."""
-    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
-    if now_utc < TOURNAMENT_DEADLINE:
+    locked = SystemSetting.get_str(db, "tournament_predictions_locked", "true")
+    if locked.lower() == "false":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Las predicciones del torneo de la comunidad solo se revelan después de la fecha límite",

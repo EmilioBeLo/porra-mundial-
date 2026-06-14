@@ -58,8 +58,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly tournamentResults = signal<TournamentResults | null>(null);
   readonly loadingTournament = signal(false);
 
-  readonly TOURNAMENT_DEADLINE = new Date('2026-06-13T19:00:00Z');
-  readonly isTournamentDeadlinePassed = computed(() => this.now() >= this.TOURNAMENT_DEADLINE.getTime());
+  readonly isTournamentLocked = signal<boolean>(true);
 
   readonly teams = computed(() => {
     const names = new Set<string>();
@@ -170,6 +169,25 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private loadTournamentData(): void {
     if (!this.auth.isLoggedIn()) return;
     this.loadingTournament.set(true);
+
+    this.api.getTournamentLock().subscribe({
+      next: (lockRes) => {
+        this.isTournamentLocked.set(lockRes.locked);
+        if (lockRes.locked) {
+          this.api.getCommunityTournamentPredictions().subscribe({
+            next: (preds) => {
+              this.communityTournamentPredictions.set(preds);
+            },
+            error: (err) => {
+              console.error('Error loading community tournament predictions', err);
+            }
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Error loading tournament lock status', err);
+      }
+    });
     
     this.api.getTournamentPrediction().subscribe({
       next: (pred) => {
@@ -195,17 +213,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
         console.error('Error loading tournament results', err);
       }
     });
-
-    if (this.isTournamentDeadlinePassed()) {
-      this.api.getCommunityTournamentPredictions().subscribe({
-        next: (preds) => {
-          this.communityTournamentPredictions.set(preds);
-        },
-        error: (err) => {
-          console.error('Error loading community tournament predictions', err);
-        }
-      });
-    }
   }
 
   private loadAssignedTeam(): void {
@@ -329,7 +336,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   saveTournamentPrediction(): void {
-    if (this.isTournamentDeadlinePassed()) return;
+    if (this.isTournamentLocked()) return;
     if (!this.campeon() || !this.subcampeon() || !this.maximoGoleador() || !this.maximoAsistente()) {
       this.saveTournamentError.set('Por favor completa todos los campos.');
       return;

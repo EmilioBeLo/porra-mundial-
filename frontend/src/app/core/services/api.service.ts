@@ -109,4 +109,13 @@ export class ApiService {
   saveTournamentResults(results: TournamentResults): Observable<{ status: string; message: string }> {
     return this.http.put<{ status: string; message: string }>(`${this.baseUrl}/admin/tournament/results`, results);
   }
+
+  getTournamentLock(): Observable<{ locked: boolean }> {
+    return this.http.get<{ locked: boolean }>(`${this.baseUrl}/settings/tournament-lock`);
+  }
+
+  toggleTournamentLock(): Observable<{ status: string; locked: boolean }> {
+    return this.http.post<{ status: string; locked: boolean }>(`${this.baseUrl}/admin/settings/toggle-tournament-lock`, {});
+  }
 }
+

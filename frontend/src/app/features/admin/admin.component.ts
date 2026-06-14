@@ -61,6 +61,12 @@ export class AdminComponent implements OnInit {
   readonly tournamentResultsMsgType = signal<'success' | 'error' | null>(null);
   readonly teams = signal<string[]>([]);
 
+  // Tournament Lock States
+  readonly isTournamentLocked = signal<boolean>(true);
+  readonly togglingLock = signal<boolean>(false);
+  readonly lockMsg = signal<string | null>(null);
+  readonly lockMsgType = signal<'success' | 'error' | null>(null);
+
   // Create match form
   newMatch = {
     equipo_local: '',
@@ -79,6 +85,7 @@ export class AdminComponent implements OnInit {
     this.loadMatches();
     this.loadCompetitions();
     this.loadTournamentResults();
+    this.loadTournamentLock();
   }
 
   private loadCompetitions(): void {
@@ -374,6 +381,40 @@ export class AdminComponent implements OnInit {
         }
       },
       error: (err) => console.error('Error loading tournament results in admin component', err)
+    });
+  }
+
+  private loadTournamentLock(): void {
+    this.api.getTournamentLock().subscribe({
+      next: (res) => this.isTournamentLocked.set(res.locked),
+      error: (err) => console.error('Error loading tournament lock status', err)
+    });
+  }
+
+  toggleLock(): void {
+    this.togglingLock.set(true);
+    this.lockMsg.set(null);
+
+    this.api.toggleTournamentLock().subscribe({
+      next: (res) => {
+        this.isTournamentLocked.set(res.locked);
+        this.togglingLock.set(false);
+        this.lockMsg.set(res.locked ? "Predicciones del torneo bloqueadas" : "Predicciones del torneo desbloqueadas");
+        this.lockMsgType.set('success');
+        setTimeout(() => {
+          this.lockMsg.set(null);
+          this.lockMsgType.set(null);
+        }, 4000);
+      },
+      error: (err) => {
+        this.togglingLock.set(false);
+        this.lockMsg.set(err.error?.detail ?? 'Error al cambiar el bloqueo del torneo');
+        this.lockMsgType.set('error');
+        setTimeout(() => {
+          this.lockMsg.set(null);
+          this.lockMsgType.set(null);
+        }, 5000);
+      }
     });
   }
 }

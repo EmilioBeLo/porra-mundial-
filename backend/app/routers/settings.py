@@ -73,3 +73,11 @@ def update_active_competition(
     recalculate_all_users_points(db, selected_comp["league_id"])
 
     return selected_comp
+
+
+@router.get("/tournament-lock", response_model=dict)
+def get_tournament_lock(db: Session = Depends(get_db)) -> dict:
+    """Get the current tournament lock status."""
+    locked_str = SystemSetting.get_str(db, "tournament_predictions_locked", "true")
+    return {"locked": locked_str.lower() == "true"}
+

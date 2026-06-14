@@ -194,18 +194,22 @@
           <!-- Lockout alert -->
           <div class="glass-card p-5 border-amber-500/20 bg-gradient-to-r from-amber-500/5 via-orange-600/5 to-amber-500/5 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-              <span class="text-2xl">🚨</span>
+              <span class="text-2xl">{{ isTournamentLocked() ? '🔒' : '🔓' }}</span>
               <div>
-                <h4 class="font-display font-bold text-white text-sm">Fecha Límite de Pronósticos del Torneo</h4>
-                <p class="text-slate-400 text-xs mt-0.5">Puedes registrar y modificar tus pronósticos hasta el 13 de Junio de 2026 a las 21:00 (Hora Madrid).</p>
+                <h4 class="font-display font-bold text-white text-sm">
+                  {{ isTournamentLocked() ? 'Pronósticos del Torneo Bloqueados' : 'Pronósticos del Torneo Abiertos' }}
+                </h4>
+                <p class="text-slate-400 text-xs mt-0.5">
+                  {{ isTournamentLocked() ? 'El plazo para registrar o modificar predicciones del torneo ha cerrado.' : 'Puedes registrar y modificar tus predicciones del torneo libremente.' }}
+                </p>
               </div>
             </div>
-            <div class="px-3 py-1 rounded-full text-xs font-bold" [ngClass]="isTournamentDeadlinePassed() ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'">
-              {{ isTournamentDeadlinePassed() ? 'Cerrado / Bloqueado' : 'Abierto para Pronosticar' }}
+            <div class="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1" [ngClass]="isTournamentLocked() ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'">
+              {{ isTournamentLocked() ? 'Cerrado / Bloqueado' : 'Abierto para Pronosticar' }}
             </div>
           </div>
 
-          @if (!isTournamentDeadlinePassed()) {
+          @if (!isTournamentLocked()) {
             <!-- Before Deadline: Form -->
             <div class="grid gap-6 md:grid-cols-3">
               <div class="md:col-span-2 glass-card p-6">
@@ -222,7 +226,8 @@
                         id="campeon-select"
                         [(ngModel)]="campeon"
                         name="campeon"
-                        class="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-accent-500/50 cursor-pointer"
+                        [disabled]="isTournamentLocked()"
+                        class="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-accent-500/50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="">Selecciona Campeón...</option>
                         @for (t of teams(); track t) {
@@ -238,7 +243,8 @@
                         id="subcampeon-select"
                         [(ngModel)]="subcampeon"
                         name="subcampeon"
-                        class="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-accent-500/50 cursor-pointer"
+                        [disabled]="isTournamentLocked()"
+                        class="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-accent-500/50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="">Selecciona Subcampeón...</option>
                         @for (t of teams(); track t) {
@@ -257,8 +263,9 @@
                         id="goleador-input"
                         [(ngModel)]="maximoGoleador"
                         name="maximoGoleador"
+                        [disabled]="isTournamentLocked()"
                         placeholder="Ej. Kylian Mbappé"
-                        class="input-field"
+                        class="input-field disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
 
@@ -270,8 +277,9 @@
                         id="asistente-input"
                         [(ngModel)]="maximoAsistente"
                         name="maximoAsistente"
+                        [disabled]="isTournamentLocked()"
                         placeholder="Ej. Kevin De Bruyne"
-                        class="input-field"
+                        class="input-field disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -279,7 +287,7 @@
                   <div class="pt-4 flex items-center justify-between gap-4">
                     <button
                       type="submit"
-                      [disabled]="isSavingTournament() || !campeon() || !subcampeon() || !maximoGoleador() || !maximoAsistente()"
+                      [disabled]="isSavingTournament() || isTournamentLocked() || !campeon() || !subcampeon() || !maximoGoleador() || !maximoAsistente()"
                       class="btn-primary w-full sm:w-auto"
                       id="save-tournament-pred-btn"
                     >

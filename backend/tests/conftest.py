@@ -27,6 +27,7 @@ def db_session():
         models.SystemSetting(key="active_league_id", value="1"),
         models.SystemSetting(key="active_season", value="2026"),
         models.SystemSetting(key="active_league_name", value="Mundial de Fútbol"),
+        models.SystemSetting(key="tournament_predictions_locked", value="true"),
     ])
     session.commit()
     try:

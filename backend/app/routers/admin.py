@@ -182,6 +182,23 @@ def update_tournament_results(
 
     # Recalculate all users' points for World Cup (league_id = 1)
     recalculate_all_users_points(db, league_id=1)
-    db.commit()
-
     return {"status": "success", "message": "Resultados del torneo actualizados y puntuación recalculada"}
+
+
+@router.post("/settings/toggle-tournament-lock", response_model=dict)
+def toggle_tournament_lock(
+    _admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Toggle the tournament predictions lock status. Requires admin."""
+    setting = db.query(SystemSetting).filter(SystemSetting.key == "tournament_predictions_locked").first()
+    if not setting:
+        setting = SystemSetting(key="tournament_predictions_locked", value="true")
+        db.add(setting)
+        new_val = "true"
+    else:
+        new_val = "false" if setting.value == "true" else "true"
+        setting.value = new_val
+    db.commit()
+    return {"status": "success", "locked": new_val == "true"}
+
