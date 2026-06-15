@@ -44,6 +44,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly sortBy = signal<'date' | 'group'>('date');
   readonly selectedGroup = signal<string>('all');
   readonly teamQuery = signal<string>('');
+  readonly showFinished = signal<boolean>(false);
 
   // --- Tournament Predictions ---
   readonly activeTab = signal<'matches' | 'tournament'>('matches');
@@ -101,6 +102,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
         m.match.equipo_local.toLowerCase().includes(query) || 
         m.match.equipo_visitante.toLowerCase().includes(query)
       );
+    }
+
+    // Hide finished matches if toggled off
+    if (!this.showFinished()) {
+      list = list.filter(m => m.match.goles_local_real === null || m.match.goles_visitante_real === null);
     }
     
     // Default sorting by date ascending
