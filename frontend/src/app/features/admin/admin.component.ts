@@ -42,6 +42,7 @@ export class AdminComponent implements OnInit {
   readonly showConfirmDrawModal = signal(false);
 
   readonly filterFase = signal('');
+  readonly showFinished = signal<boolean>(false);
   readonly showCreateForm = signal(false);
 
   // Competitions State
@@ -162,9 +163,13 @@ export class AdminComponent implements OnInit {
   }
 
   get filteredMatches(): MatchAdmin[] {
+    let list = this.matches();
+    if (!this.showFinished()) {
+      list = list.filter((m) => m.goles_local_real === null || m.goles_visitante_real === null);
+    }
     const fase = this.filterFase();
-    if (!fase) return this.matches();
-    return this.matches().filter((m) => m.grupo_o_fase === fase);
+    if (!fase) return list;
+    return list.filter((m) => m.grupo_o_fase === fase);
   }
 
   submitResult(match: MatchAdmin): void {

@@ -465,25 +465,38 @@
   </div>
 
   <!-- Filters -->
-  <div class="flex items-center gap-3 mb-6 overflow-x-auto pb-2" id="admin-filters">
-    <button
-      (click)="filterFase.set('')"
-      class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200"
-      [class]="!filterFase() ? 'bg-accent-500 text-slate-900 font-bold' : 'bg-white/5 text-slate-300 hover:bg-white/10'"
-      id="admin-filter-all"
-    >
-      Todos
-    </button>
-    @for (fase of fases(); track fase) {
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-3 overflow-x-auto pb-2 sm:pb-0" id="admin-filters">
       <button
-        (click)="filterFase.set(fase)"
+        (click)="filterFase.set('')"
         class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200"
-        [class]="filterFase() === fase ? 'bg-accent-500 text-slate-900 font-bold' : 'bg-white/5 text-slate-300 hover:bg-white/10'"
-        id="admin-filter-{{ fase }}"
+        [class]="!filterFase() ? 'bg-accent-500 text-slate-900 font-bold' : 'bg-white/5 text-slate-300 hover:bg-white/10'"
+        id="admin-filter-all"
       >
-        {{ fase }}
+        Todos
       </button>
-    }
+      @for (fase of fases(); track fase) {
+        <button
+          (click)="filterFase.set(fase)"
+          class="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200"
+          [class]="filterFase() === fase ? 'bg-accent-500 text-slate-900 font-bold' : 'bg-white/5 text-slate-300 hover:bg-white/10'"
+          id="admin-filter-{{ fase }}"
+        >
+          {{ fase }}
+        </button>
+      }
+    </div>
+
+    <button 
+      (click)="showFinished.set(!showFinished())" 
+      class="px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border flex items-center gap-2 whitespace-nowrap"
+      [class]="showFinished() 
+        ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' 
+        : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'"
+      id="toggle-finished-matches-admin-btn"
+    >
+      <span>{{ showFinished() ? '👁️ Ocultar Finalizados' : '👁️ Mostrar Finalizados' }}</span>
+    </button>
   </div>
 
   @if (loading()) {
