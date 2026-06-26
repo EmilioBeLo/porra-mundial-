@@ -22,11 +22,12 @@ def test_client(db_session):
 
 def test_get_ranking_excludes_admin(test_client, db_session):
     # Setup users
-    admin = User(nombre="AdminUser", password_hash="hash", is_admin=True)
+    admin = User(nombre="admin", password_hash="hash", is_admin=True)
+    cronix = User(nombre="Cronix", password_hash="hash", is_admin=True, puntos_totales=15)
     user1 = User(nombre="RegularUser1", password_hash="hash", is_admin=False, puntos_totales=10)
     user2 = User(nombre="RegularUser2", password_hash="hash", is_admin=False, puntos_totales=20)
     
-    db_session.add_all([admin, user1, user2])
+    db_session.add_all([admin, cronix, user1, user2])
     db_session.commit()
 
     # Call endpoint
@@ -34,12 +35,13 @@ def test_get_ranking_excludes_admin(test_client, db_session):
     assert response.status_code == 200
     
     data = response.json()
-    # Should only return regular users, so size should be 2
-    assert len(data) == 2
+    # Should return all users except "admin", so size should be 3
+    assert len(data) == 3
     
-    # Assert that admin user is NOT present
+    # Assert that admin user is NOT present, but Cronix and regular users are
     names = [u["nombre"] for u in data]
-    assert "AdminUser" not in names
+    assert "admin" not in [n.lower() for n in names]
+    assert "Cronix" in names
     assert "RegularUser1" in names
     assert "RegularUser2" in names
 
