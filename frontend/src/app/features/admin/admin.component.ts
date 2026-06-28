@@ -8,6 +8,7 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
 interface MatchAdmin extends Match {
   editGolesLocal: number | null;
   editGolesVisitante: number | null;
+  editPenaltiesWinner: number | null;
   isSaving: boolean;
   saveMsg: string | null;
   saveMsgType: 'success' | 'error' | null;
@@ -138,6 +139,7 @@ export class AdminComponent implements OnInit {
           ...m,
           editGolesLocal: m.goles_local_real,
           editGolesVisitante: m.goles_visitante_real,
+          editPenaltiesWinner: null,
           isSaving: false,
           saveMsg: null,
           saveMsgType: null,
@@ -176,10 +178,24 @@ export class AdminComponent implements OnInit {
     if (match.editGolesLocal === null || match.editGolesVisitante === null) return;
     if (match.editGolesLocal < 0 || match.editGolesVisitante < 0) return;
 
+    let penaltiesWinnerVal: number | undefined = undefined;
+    if (match.id >= 73 && match.editGolesLocal === match.editGolesVisitante) {
+      if (match.editPenaltiesWinner === null || match.editPenaltiesWinner === undefined) {
+        match.saveMsg = 'Los partidos de eliminación directa no pueden terminar en empate sin definir un ganador de penaltis.';
+        match.saveMsgType = 'error';
+        setTimeout(() => {
+          match.saveMsg = null;
+          match.saveMsgType = null;
+        }, 5000);
+        return;
+      }
+      penaltiesWinnerVal = Number(match.editPenaltiesWinner);
+    }
+
     match.isSaving = true;
     match.saveMsg = null;
 
-    this.api.submitResult(match.id, match.editGolesLocal, match.editGolesVisitante).subscribe({
+    this.api.submitResult(match.id, match.editGolesLocal, match.editGolesVisitante, penaltiesWinnerVal).subscribe({
       next: () => {
         match.goles_local_real = match.editGolesLocal;
         match.goles_visitante_real = match.editGolesVisitante;

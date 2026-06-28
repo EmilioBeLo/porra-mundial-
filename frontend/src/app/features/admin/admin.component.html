@@ -555,6 +555,17 @@
                 placeholder="0"
                 id="admin-goles-visitante-{{ match.id }}"
               />
+              @if (match.id >= 73 && match.editGolesLocal !== null && match.editGolesVisitante !== null && match.editGolesLocal === match.editGolesVisitante) {
+                <select
+                  [(ngModel)]="match.editPenaltiesWinner"
+                  class="bg-slate-850 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500 cursor-pointer"
+                  id="admin-penalties-winner-{{ match.id }}"
+                >
+                  <option [ngValue]="null" disabled selected>Clasifica...</option>
+                  <option [ngValue]="1">{{ match.equipo_local }}</option>
+                  <option [ngValue]="2">{{ match.equipo_visitante }}</option>
+                </select>
+              }
               <button
                 (click)="submitResult(match)"
                 [disabled]="match.isSaving || match.editGolesLocal === null || match.editGolesVisitante === null"

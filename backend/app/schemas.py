@@ -135,6 +135,7 @@ class CommunityPrediction(BaseModel):
 class MatchResultUpdate(BaseModel):
     goles_local_real: int = Field(..., ge=0)
     goles_visitante_real: int = Field(..., ge=0)
+    penalties_winner: Optional[int] = None
 
 
 class RecalculationResult(BaseModel):

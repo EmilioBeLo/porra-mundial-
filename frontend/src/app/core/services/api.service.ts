@@ -53,12 +53,17 @@ export class ApiService {
   }
 
   // --- Admin ---
-  submitResult(matchId: number, goles_local: number, goles_visitante: number): Observable<{ match_id: number; predictions_updated: number; users_updated: number }> {
-    return this.http.put<{ match_id: number; predictions_updated: number; users_updated: number }>(`${this.baseUrl}/admin/matches/${matchId}/result`, {
+  submitResult(matchId: number, goles_local: number, goles_visitante: number, penalties_winner?: number): Observable<{ match_id: number; predictions_updated: number; users_updated: number }> {
+    const payload: any = {
       goles_local_real: goles_local,
       goles_visitante_real: goles_visitante,
-    });
+    };
+    if (penalties_winner !== undefined && penalties_winner !== null) {
+      payload.penalties_winner = penalties_winner;
+    }
+    return this.http.put<{ match_id: number; predictions_updated: number; users_updated: number }>(`${this.baseUrl}/admin/matches/${matchId}/result`, payload);
   }
+
 
   createMatch(match: Partial<Match>): Observable<Match> {
     return this.http.post<Match>(`${this.baseUrl}/admin/matches`, match);

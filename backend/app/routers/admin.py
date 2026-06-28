@@ -38,6 +38,40 @@ def create_match(
     return MatchResponse.model_validate(match)
 
 
+KNOCKOUT_MAPPING = {
+    73: [(90, "local", "winner")],
+    74: [(89, "local", "winner")],
+    75: [(90, "visitor", "winner")],
+    76: [(91, "local", "winner")],
+    77: [(89, "visitor", "winner")],
+    78: [(91, "visitor", "winner")],
+    79: [(92, "local", "winner")],
+    80: [(92, "visitor", "winner")],
+    81: [(94, "local", "winner")],
+    82: [(94, "visitor", "winner")],
+    83: [(93, "local", "winner")],
+    84: [(93, "visitor", "winner")],
+    85: [(96, "local", "winner")],
+    86: [(95, "local", "winner")],
+    87: [(96, "visitor", "winner")],
+    88: [(95, "visitor", "winner")],
+    89: [(97, "local", "winner")],
+    90: [(97, "visitor", "winner")],
+    91: [(99, "local", "winner")],
+    92: [(99, "visitor", "winner")],
+    93: [(98, "local", "winner")],
+    94: [(98, "visitor", "winner")],
+    95: [(100, "local", "winner")],
+    96: [(100, "visitor", "winner")],
+    97: [(101, "local", "winner")],
+    98: [(101, "visitor", "winner")],
+    99: [(102, "local", "winner")],
+    100: [(102, "visitor", "winner")],
+    101: [(104, "local", "winner"), (103, "local", "loser")],
+    102: [(104, "visitor", "winner"), (103, "visitor", "loser")],
+}
+
+
 @router.put("/matches/{match_id}/result", response_model=RecalculationResult)
 def update_result(
     match_id: int,
@@ -65,6 +99,41 @@ def update_result(
     match.goles_local_real = body.goles_local_real
     match.goles_visitante_real = body.goles_visitante_real
 
+    # Handle knockout progression
+    if 73 <= match_id <= 102:
+        if body.goles_local_real > body.goles_visitante_real:
+            winner = match.equipo_local
+            loser = match.equipo_visitante
+        elif body.goles_local_real < body.goles_visitante_real:
+            winner = match.equipo_visitante
+            loser = match.equipo_local
+        else:
+            if body.penalties_winner is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Los partidos de eliminación directa no pueden terminar en empate sin definir un ganador de penaltis.",
+                )
+            if body.penalties_winner == 1:
+                winner = match.equipo_local
+                loser = match.equipo_visitante
+            elif body.penalties_winner == 2:
+                winner = match.equipo_visitante
+                loser = match.equipo_local
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Ganador de penaltis inválido.",
+                )
+
+        for target_id, slot, rel in KNOCKOUT_MAPPING[match_id]:
+            target_match = db.query(Match).filter(Match.id == target_id).first()
+            if target_match:
+                team_name = winner if rel == "winner" else loser
+                if slot == "local":
+                    target_match.equipo_local = team_name
+                elif slot == "visitor":
+                    target_match.equipo_visitante = team_name
+
     # Step 2: Get all predictions for this match to compute response metrics
     predictions = db.query(Prediction).filter(Prediction.match_id == match_id).all()
     affected_user_ids = {p.user_id for p in predictions}
@@ -81,6 +150,7 @@ def update_result(
         predictions_updated=len(predictions),
         users_updated=len(affected_user_ids),
     )
+
 
 
 @router.post("/recalculate", status_code=status.HTTP_200_OK)
