@@ -166,6 +166,10 @@ def recalculate_all_users_points(db: Session, league_id: int) -> None:
             .filter(Prediction.user_id == user.id, Match.league_id == league_id)
             .all()
         )
+        # Update prediction points before summing to apply rules retroactively (e.g. double points)
+        for p in preds:
+            p.puntos_obtenidos, _ = calculate_points(p, p.match)
+            
         puntos_totales = sum(p.puntos_obtenidos for p in preds)
 
         perfectos = 0

@@ -9,6 +9,7 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
 )
+from sqlalchemy import event
 from sqlalchemy.orm import relationship, Session
 
 from app.database import Base
@@ -105,4 +106,17 @@ class TournamentPrediction(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", backref="tournament_prediction")
+
+
+@event.listens_for(Match, 'before_insert')
+def set_spain_double_points_insert(mapper, connection, target):
+    if target.equipo_local in ("Spain", "España") or target.equipo_visitante in ("Spain", "España"):
+        target.es_partido_doble = True
+
+
+@event.listens_for(Match, 'before_update')
+def set_spain_double_points_update(mapper, connection, target):
+    if target.equipo_local in ("Spain", "España") or target.equipo_visitante in ("Spain", "España"):
+        target.es_partido_doble = True
+
 

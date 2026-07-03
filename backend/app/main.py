@@ -27,9 +27,24 @@ try:
         db.add(SystemSetting(key="tournament_predictions_locked", value="true"))
         db.commit()
     
+    # Ensure all Spain/España matches are marked as double matches (x2)
+    from app.models import Match
+    spain_matches = db.query(Match).filter(
+        (Match.equipo_local.in_(["Spain", "España"])) | 
+        (Match.equipo_visitante.in_(["Spain", "España"]))
+    ).all()
+    updated_any = False
+    for m in spain_matches:
+        if not m.es_partido_doble:
+            m.es_partido_doble = True
+            updated_any = True
+    if updated_any:
+        db.commit()
+
     # Recalculate standings on startup to ensure historical manual entries are updated/corrected
     from app.services.scoring_service import recalculate_all_users_points
     recalculate_all_users_points(db, league_id=1)
+
 finally:
     db.close()
 
