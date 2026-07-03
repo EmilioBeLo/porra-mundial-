@@ -140,10 +140,11 @@ def test_get_community_predictions_before_lockout(test_client, db_session):
 
 
 def test_get_community_predictions_after_lockout(test_client, db_session):
-    admin = User(nombre="AdminUser", password_hash="hash", is_admin=True)
+    admin = User(nombre="admin", password_hash="hash", is_admin=True)
     user1 = User(nombre="UserOne", password_hash="hash", is_admin=False)
     user2 = User(nombre="UserTwo", password_hash="hash", is_admin=False)
-    db_session.add_all([admin, user1, user2])
+    cronix = User(nombre="cronix", password_hash="hash", is_admin=True)
+    db_session.add_all([admin, user1, user2, cronix])
     
     # Lock predictions, meaning community view is unlocked
     setting = db_session.query(SystemSetting).filter_by(key="tournament_predictions_locked").first()
@@ -174,7 +175,14 @@ def test_get_community_predictions_after_lockout(test_client, db_session):
         maximo_goleador="Pedri",
         maximo_asistente="Pedri",
     )
-    db_session.add_all([pred1, pred2, pred_admin])
+    pred_cronix = TournamentPrediction(
+        user_id=cronix.id,
+        campeon="Uruguay",
+        subcampeon="Inglaterra",
+        maximo_goleador="Suarez",
+        maximo_asistente="De Arrascaeta",
+    )
+    db_session.add_all([pred1, pred2, pred_admin, pred_cronix])
     db_session.commit()
 
     token = generate_token(user1.id)
@@ -185,9 +193,10 @@ def test_get_community_predictions_after_lockout(test_client, db_session):
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 2
+    assert len(data) == 3
     names = [p["username"] for p in data]
-    assert "AdminUser" not in names
+    assert "admin" not in names
+    assert "cronix" in names
     assert "UserOne" in names
     assert "UserTwo" in names
 

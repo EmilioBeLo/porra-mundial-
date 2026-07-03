@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -150,7 +151,7 @@ def get_community_predictions(
         .join(User)
         .filter(
             Prediction.match_id == match_id,
-            User.is_admin == False,
+            func.lower(User.nombre) != "admin",
         )
         .all()
     )
@@ -244,7 +245,7 @@ def get_community_tournament_predictions(
     predictions = (
         db.query(TournamentPrediction)
         .join(User)
-        .filter(User.is_admin == False)
+        .filter(func.lower(User.nombre) != "admin")
         .all()
     )
     return [

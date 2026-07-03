@@ -96,21 +96,26 @@ def test_get_community_predictions_excludes_admin(test_client, db_session):
     db_session.commit()
     db_session.refresh(match)
 
-    # Admin and normal user
-    admin = User(nombre="Admin User", password_hash="hash", is_admin=True)
+    # Admin, normal user, and custom admin
+    admin = User(nombre="admin", password_hash="hash", is_admin=True)
     user1 = User(nombre="Normal User", password_hash="hash", is_admin=False)
-    db_session.add_all([admin, user1])
+    cronix = User(nombre="cronix", password_hash="hash", is_admin=True)
+    db_session.add_all([admin, user1, cronix])
     db_session.commit()
 
     # Predictions
     pred_admin = Prediction(user_id=admin.id, match_id=match.id, goles_local_pred=3, goles_visitante_pred=3, puntos_obtenidos=1)
     pred_user = Prediction(user_id=user1.id, match_id=match.id, goles_local_pred=1, goles_visitante_pred=1, puntos_obtenidos=0)
-    db_session.add_all([pred_admin, pred_user])
+    pred_cronix = Prediction(user_id=cronix.id, match_id=match.id, goles_local_pred=2, goles_visitante_pred=2, puntos_obtenidos=2)
+    db_session.add_all([pred_admin, pred_user, pred_cronix])
     db_session.commit()
 
     response = test_client.get(f"/api/predictions/match/{match.id}")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 1
-    assert data[0]["username"] == "Normal User"
-    assert data[0]["goles_local"] == 1
+    assert len(data) == 2
+    
+    usernames = [d["username"] for d in data]
+    assert "admin" not in usernames
+    assert "cronix" in usernames
+    assert "Normal User" in usernames
