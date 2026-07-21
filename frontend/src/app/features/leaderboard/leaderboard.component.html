@@ -61,18 +61,18 @@
     </div>
 
     <!-- Table (Desktop) -->
-    <div class="hidden md:block glass-card overflow-hidden animate-fade-in-up" id="leaderboard-table">
-      <table class="w-full">
+    <div class="hidden md:block glass-card overflow-x-auto animate-fade-in-up" id="leaderboard-table">
+      <table class="w-full text-sm min-w-[650px]">
         <thead>
-          <tr class="border-b border-white/10">
-            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">#</th>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Jugador</th>
-            <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Equipo Underdog</th>
-            <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Aciertos 🔥</th>
-            <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Pts Preds</th>
-            <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Pts Torneo 🏆</th>
-            <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Pts Equipo</th>
-            <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Pts Totales</th>
+          <tr class="border-b border-white/10 text-slate-400 text-xs uppercase tracking-wider">
+            <th class="px-3 sm:px-4 py-3.5 text-left font-semibold">#</th>
+            <th class="px-3 sm:px-4 py-3.5 text-left font-semibold">Jugador</th>
+            <th class="px-3 sm:px-4 py-3.5 text-left font-semibold">Equipo Underdog</th>
+            <th class="px-3 sm:px-4 py-3.5 text-right font-semibold whitespace-nowrap">Aciertos 🔥</th>
+            <th class="px-3 sm:px-4 py-3.5 text-right font-semibold whitespace-nowrap">Pts Preds</th>
+            <th class="px-3 sm:px-4 py-3.5 text-right font-semibold whitespace-nowrap">Pts Torneo 🏆</th>
+            <th class="px-3 sm:px-4 py-3.5 text-right font-semibold whitespace-nowrap">Pts Equipo</th>
+            <th class="px-3 sm:px-4 py-3.5 text-right font-semibold whitespace-nowrap">Pts Totales</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-white/5">
@@ -84,7 +84,7 @@
               [ngClass]="{ 'bg-accent-500/5': user.id === currentUserId() }"
               id="leaderboard-row-{{ user.id }}"
             >
-              <td class="px-6 py-4">
+              <td class="px-3 sm:px-4 py-3.5 whitespace-nowrap">
                 <span class="font-display font-bold text-white">
                   @if (user.posicion && user.posicion <= 3) {
                     {{ getMedalEmoji(user.posicion) }}
@@ -93,7 +93,7 @@
                   }
                 </span>
               </td>
-              <td class="px-6 py-4">
+              <td class="px-3 sm:px-4 py-3.5 whitespace-nowrap">
                 <span class="font-medium text-white" [class.text-accent-400]="user.id === currentUserId()">
                   {{ user.nombre }}
                   @if (user.id === currentUserId()) {
@@ -101,7 +101,7 @@
                   }
                 </span>
               </td>
-              <td class="px-6 py-4">
+              <td class="px-3 sm:px-4 py-3.5 whitespace-nowrap">
                 @if (user.assigned_team) {
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
                     {{ getTeamFlag(user.assigned_team) }} {{ user.assigned_team }}
@@ -110,16 +110,16 @@
                   <span class="text-slate-500 text-xs">-</span>
                 }
               </td>
-              <td class="px-6 py-4 text-right">
-                <span class="text-emerald-400 font-medium">{{ user.aciertos_perfectos }}</span>
+              <td class="px-3 sm:px-4 py-3.5 text-right whitespace-nowrap">
+                <span class="text-emerald-400 font-bold">{{ user.aciertos_perfectos }}</span>
               </td>
-              <td class="px-6 py-4 text-right">
+              <td class="px-3 sm:px-4 py-3.5 text-right whitespace-nowrap">
                 <span class="text-white font-medium">{{ user.puntos_predicciones }}</span>
               </td>
-              <td class="px-6 py-4 text-right">
+              <td class="px-3 sm:px-4 py-3.5 text-right whitespace-nowrap">
                 <div class="inline-flex flex-col items-end">
-                  <span class="text-amber-400 font-medium">+{{ user.puntos_torneo || 0 }}</span>
-                  <div class="flex items-center gap-1.5 text-[10px] mt-0.5 text-slate-400" title="Campeón / Subcampeón / Goleador / Asistente">
+                  <span class="text-amber-400 font-bold">+{{ user.puntos_torneo || 0 }}</span>
+                  <div class="flex items-center gap-1 text-[10px] mt-0.5 text-slate-400" title="Campeón / Subcampeón / Goleador / Asistente">
                     <span [class.text-amber-300]="user.puntos_campeon" [class.font-bold]="user.puntos_campeon">🥇+{{ user.puntos_campeon || 0 }}</span>
                     <span [class.text-amber-300]="user.puntos_subcampeon" [class.font-bold]="user.puntos_subcampeon">🥈+{{ user.puntos_subcampeon || 0 }}</span>
                     <span [class.text-amber-300]="user.puntos_goleador" [class.font-bold]="user.puntos_goleador">👟+{{ user.puntos_goleador || 0 }}</span>
@@ -127,11 +127,11 @@
                   </div>
                 </div>
               </td>
-              <td class="px-6 py-4 text-right">
+              <td class="px-3 sm:px-4 py-3.5 text-right whitespace-nowrap">
                 <span class="text-amber-400 font-medium">+{{ user.puntos_underdog }}</span>
               </td>
-              <td class="px-6 py-4 text-right">
-                <span class="font-display font-bold text-amber-400 text-lg">{{ user.puntos_totales }}</span>
+              <td class="px-3 sm:px-4 py-3.5 text-right whitespace-nowrap">
+                <span class="font-display font-extrabold text-amber-400 text-lg sm:text-xl">{{ user.puntos_totales }} pts</span>
               </td>
             </tr>
           }
@@ -177,26 +177,26 @@
           <div class="border-t border-white/5"></div>
 
           <!-- 5-column grid -->
-          <div class="grid grid-cols-5 gap-1 text-center text-xs">
+          <div class="grid grid-cols-5 gap-1 text-center text-[11px] sm:text-xs">
             <div>
-              <span class="text-slate-400 block mb-1">Aciertos 🔥</span>
+              <span class="text-slate-400 block mb-1 truncate">Aciertos 🔥</span>
               <span class="text-emerald-400 font-bold block">{{ user.aciertos_perfectos }}</span>
             </div>
             <div>
-              <span class="text-slate-400 block mb-1">Preds</span>
+              <span class="text-slate-400 block mb-1 truncate">Preds</span>
               <span class="text-white font-medium block">{{ user.puntos_predicciones }}</span>
             </div>
             <div>
-              <span class="text-slate-400 block mb-1">Torneo 🏆</span>
-              <span class="text-amber-400 font-medium block">+{{ user.puntos_torneo || 0 }}</span>
+              <span class="text-slate-400 block mb-1 truncate">Torneo 🏆</span>
+              <span class="text-amber-400 font-bold block">+{{ user.puntos_torneo || 0 }}</span>
             </div>
             <div>
-              <span class="text-slate-400 block mb-1">Equipo</span>
+              <span class="text-slate-400 block mb-1 truncate">Equipo</span>
               <span class="text-amber-400 font-medium block">+{{ user.puntos_underdog }}</span>
             </div>
             <div>
-              <span class="text-slate-400 block mb-1">Total</span>
-              <span class="text-accent-400 font-extrabold block">{{ user.puntos_totales }}</span>
+              <span class="text-slate-400 block mb-1 truncate">Total</span>
+              <span class="text-accent-400 font-extrabold block text-sm">{{ user.puntos_totales }} pts</span>
             </div>
           </div>
 
