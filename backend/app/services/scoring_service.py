@@ -81,6 +81,61 @@ def calculate_assigned_team_points(db: Session, user: User) -> int:
     return points
 
 
+import unicodedata
+from difflib import SequenceMatcher
+
+def normalize_name(text: str) -> str:
+    """Normalize text by removing accents, lowercasing, and mapping common country synonyms."""
+    if not text:
+        return ""
+    nfkd = unicodedata.normalize('NFKD', text)
+    no_accents = "".join([c for c in nfkd if not unicodedata.combining(c)])
+    clean = no_accents.lower().replace('ñ', 'n').strip()
+
+    country_map = {
+        "spain": "espana",
+        "españa": "espana",
+        "germany": "alemania",
+        "france": "francia",
+        "brazil": "brasil",
+        "holland": "paises bajos",
+        "netherlands": "paises bajos",
+        "england": "inglaterra",
+        "portugal": "portugal",
+        "argentina": "argentina",
+        "italy": "italia",
+    }
+    return country_map.get(clean, clean)
+
+
+def matches_name(pred: str, real: str) -> bool:
+    """Flexible/fuzzy matching to accept typos, missing accents, and country synonyms."""
+    if not real or not pred:
+        return False
+    p = normalize_name(pred)
+    r = normalize_name(real)
+    if not p or not r:
+        return False
+
+    if p == r:
+        return True
+    if len(p) >= 4 and len(r) >= 4 and (p in r or r in p):
+        return True
+
+    if SequenceMatcher(None, p, r).ratio() >= 0.70:
+        return True
+
+    p_words = p.split()
+    r_words = r.split()
+    for pw in p_words:
+        for rw in r_words:
+            if len(pw) >= 4 and len(rw) >= 4:
+                if SequenceMatcher(None, pw, rw).ratio() >= 0.75:
+                    return True
+
+    return False
+
+
 def calculate_tournament_points_breakdown(db: Session, user_id: int) -> dict:
     """Calculate tournament prediction points breakdown for a user."""
     prediction = db.query(TournamentPrediction).filter(TournamentPrediction.user_id == user_id).first()
@@ -92,15 +147,10 @@ def calculate_tournament_points_breakdown(db: Session, user_id: int) -> dict:
     real_maximo_goleador = SystemSetting.get_str(db, "real_maximo_goleador", "")
     real_maximo_asistente = SystemSetting.get_str(db, "real_maximo_asistente", "")
 
-    def _match(pred: str, real: str) -> bool:
-        if not real or not pred:
-            return False
-        return pred.strip().lower() == real.strip().lower()
-
-    pts_campeon = 10 if _match(prediction.campeon, real_campeon) else 0
-    pts_subcampeon = 5 if _match(prediction.subcampeon, real_subcampeon) else 0
-    pts_goleador = 5 if _match(prediction.maximo_goleador, real_maximo_goleador) else 0
-    pts_asistente = 5 if _match(prediction.maximo_asistente, real_maximo_asistente) else 0
+    pts_campeon = 10 if matches_name(prediction.campeon, real_campeon) else 0
+    pts_subcampeon = 5 if matches_name(prediction.subcampeon, real_subcampeon) else 0
+    pts_goleador = 5 if matches_name(prediction.maximo_goleador, real_maximo_goleador) else 0
+    pts_asistente = 5 if matches_name(prediction.maximo_asistente, real_maximo_asistente) else 0
 
     total = pts_campeon + pts_subcampeon + pts_goleador + pts_asistente
 

@@ -375,7 +375,88 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   isCorrect(pred: string | undefined, real: string | undefined): boolean {
     if (!pred || !real) return false;
-    return pred.trim().toLowerCase() === real.trim().toLowerCase();
+    const p = this.normalizeName(pred);
+    const r = this.normalizeName(real);
+    if (!p || !r) return false;
+
+    if (p === r) return true;
+    if (p.length >= 4 && r.length >= 4 && (p.includes(r) || r.includes(p))) return true;
+
+    if (this.similarity(p, r) >= 0.70) return true;
+
+    const pWords = p.split(/\s+/);
+    const rWords = r.split(/\s+/);
+    for (const pw of pWords) {
+      for (const rw of rWords) {
+        if (pw.length >= 4 && rw.length >= 4) {
+          if (this.similarity(pw, rw) >= 0.75) return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  private normalizeName(text: string): string {
+    if (!text) return '';
+    const clean = text
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/ñ/g, 'n')
+      .trim();
+
+    const countryMap: Record<string, string> = {
+      spain: 'espana',
+      españa: 'espana',
+      germany: 'alemania',
+      france: 'francia',
+      brazil: 'brasil',
+      holland: 'paises bajos',
+      netherlands: 'paises bajos',
+      england: 'inglaterra',
+      portugal: 'portugal',
+      argentina: 'argentina',
+      italy: 'italia',
+    };
+    return countryMap[clean] || clean;
+  }
+
+  private similarity(s1: string, s2: string): number {
+    let longer = s1;
+    let shorter = s2;
+    if (s1.length < s2.length) {
+      longer = s2;
+      shorter = s1;
+    }
+    const longerLength = longer.length;
+    if (longerLength === 0) return 1.0;
+    return (longerLength - this.editDistance(longer, shorter)) / longerLength;
+  }
+
+  private editDistance(s1: string, s2: string): number {
+    s1 = s1.toLowerCase();
+    s2 = s2.toLowerCase();
+    const costs: number[] = [];
+    for (let i = 0; i <= s1.length; i++) {
+      let lastValue = i;
+      for (let j = 0; j <= s2.length; j++) {
+        if (i === 0) {
+          costs[j] = j;
+        } else {
+          if (j > 0) {
+            let newValue = costs[j - 1];
+            if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
+              newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+            }
+            costs[j - 1] = lastValue;
+            lastValue = newValue;
+          }
+        }
+      }
+      if (i > 0) costs[s2.length] = lastValue;
+    }
+    return costs[s2.length];
   }
 
   hasTournamentResults(): boolean {
