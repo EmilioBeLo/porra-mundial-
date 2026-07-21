@@ -81,34 +81,41 @@ def calculate_assigned_team_points(db: Session, user: User) -> int:
     return points
 
 
-def calculate_tournament_points(db: Session, user_id: int) -> int:
-    """Calculate tournament prediction points for a user."""
+def calculate_tournament_points_breakdown(db: Session, user_id: int) -> dict:
+    """Calculate tournament prediction points breakdown for a user."""
     prediction = db.query(TournamentPrediction).filter(TournamentPrediction.user_id == user_id).first()
     if not prediction:
-        return 0
+        return {"campeon": 0, "subcampeon": 0, "goleador": 0, "asistente": 0, "total": 0}
 
     real_campeon = SystemSetting.get_str(db, "real_campeon", "")
     real_subcampeon = SystemSetting.get_str(db, "real_subcampeon", "")
     real_maximo_goleador = SystemSetting.get_str(db, "real_maximo_goleador", "")
     real_maximo_asistente = SystemSetting.get_str(db, "real_maximo_asistente", "")
 
-    points = 0
-
     def _match(pred: str, real: str) -> bool:
         if not real or not pred:
             return False
         return pred.strip().lower() == real.strip().lower()
 
-    if _match(prediction.campeon, real_campeon):
-        points += 10
-    if _match(prediction.subcampeon, real_subcampeon):
-        points += 5
-    if _match(prediction.maximo_goleador, real_maximo_goleador):
-        points += 5
-    if _match(prediction.maximo_asistente, real_maximo_asistente):
-        points += 5
+    pts_campeon = 10 if _match(prediction.campeon, real_campeon) else 0
+    pts_subcampeon = 5 if _match(prediction.subcampeon, real_subcampeon) else 0
+    pts_goleador = 5 if _match(prediction.maximo_goleador, real_maximo_goleador) else 0
+    pts_asistente = 5 if _match(prediction.maximo_asistente, real_maximo_asistente) else 0
 
-    return points
+    total = pts_campeon + pts_subcampeon + pts_goleador + pts_asistente
+
+    return {
+        "campeon": pts_campeon,
+        "subcampeon": pts_subcampeon,
+        "goleador": pts_goleador,
+        "asistente": pts_asistente,
+        "total": total,
+    }
+
+
+def calculate_tournament_points(db: Session, user_id: int) -> int:
+    """Calculate total tournament prediction points for a user."""
+    return calculate_tournament_points_breakdown(db, user_id)["total"]
 
 
 def calculate_points(prediction: Prediction, match: Match) -> Tuple[int, bool]:

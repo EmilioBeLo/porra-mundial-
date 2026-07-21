@@ -9,4 +9,8 @@ export interface User {
   puntos_underdog?: number;
   puntos_predicciones?: number;
   puntos_torneo?: number;
+  puntos_campeon?: number;
+  puntos_subcampeon?: number;
+  puntos_goleador?: number;
+  puntos_asistente?: number;
 }

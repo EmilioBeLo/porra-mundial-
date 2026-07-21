@@ -122,3 +122,47 @@ def test_get_ranking_includes_points_breakdown(test_client, db_session):
     assert u_data["puntos_predicciones"] == 11
     assert u_data["puntos_totales"] == 15
 
+
+def test_get_ranking_tournament_breakdown(test_client, db_session):
+    from app.models import TournamentPrediction, SystemSetting
+
+    user = User(
+        nombre="TorneoUser",
+        password_hash="hash",
+        is_admin=False,
+        puntos_totales=25,
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    # Set real results in system settings
+    db_session.add_all([
+        SystemSetting(key="real_campeon", value="Spain"),
+        SystemSetting(key="real_subcampeon", value="Argentina"),
+        SystemSetting(key="real_maximo_goleador", value="Mbappé"),
+        SystemSetting(key="real_maximo_asistente", value="Messi"),
+    ])
+    
+    # Add tournament prediction matching campeon (+10) and goleador (+5)
+    pred = TournamentPrediction(
+        user_id=user.id,
+        campeon="Spain",
+        subcampeon="Brazil",
+        maximo_goleador="Mbappé",
+        maximo_asistente="De Bruyne",
+    )
+    db_session.add(pred)
+    db_session.commit()
+
+    response = test_client.get("/api/users")
+    assert response.status_code == 200
+    data = response.json()
+    u_data = [u for u in data if u["nombre"] == "TorneoUser"][0]
+
+    assert u_data["puntos_torneo"] == 15
+    assert u_data["puntos_campeon"] == 10
+    assert u_data["puntos_subcampeon"] == 0
+    assert u_data["puntos_goleador"] == 5
+    assert u_data["puntos_asistente"] == 0
+
+

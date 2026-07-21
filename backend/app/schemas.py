@@ -41,6 +41,10 @@ class UserRanking(UserPublic):
     puntos_underdog: int
     puntos_predicciones: int
     puntos_torneo: int
+    puntos_campeon: int = 0
+    puntos_subcampeon: int = 0
+    puntos_goleador: int = 0
+    puntos_asistente: int = 0
 
 
 # ──────────────────────────────────────────────
